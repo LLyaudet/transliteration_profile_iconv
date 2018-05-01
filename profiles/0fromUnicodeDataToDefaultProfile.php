@@ -97,15 +97,15 @@ catch(Exception $oException){
        "----- Script fromUnicodeDataToDefaultProfile           -----\n",
        "------------------------------------------------------------\n",
        "Usage : php fromUnicodeDataToDefaultProfile.php @InputFileName@ @OutputFileName@ @UnicodeEncoding@ @DefaultValue@\n",
-       "@InputFileName@ : name of the input file with unicode data, e.g. \"UnicodeData_10.0.0.txt\"\n",
-       "@OutputFileName@ : name of the output file with default transliteration profile, e.g. \"|UTF8|IGNORE.txt\"\n",
+       "@InputFileName@ : name of the input file with unicode data, e.g. \"1UnicodeData_10.0.0.txt\"\n",
+       "@OutputFileName@ : name of the output file with default transliteration profile, e.g. \"tp_UTF8__IGNORE.txt\"\n",
        "@UnicodeEncoding@ : name of the character encoding scheme of unicode characters, e.g. \"UTF-8\", \"UTF-16BE\", \"UTF-32BE\", \"UTF-16LE\", or \"UTF-32LE\"\n",
        "@DefaultValue@ : the default value that will be the transliteration of all code points ;\n",
        "                 it must be an hexadecimal string of pair length, or one of the following values:",
        "                   -1 (ignore this character),\n",
        "                   -2, -3, ..., -128 (error on reading this character),\n",
        "                     this will be the error code returned so that you can freely dispatch characters into distinct error codes,\n",
-       "Example : php fromUnicodeDataToDefaultProfile.php UnicodeData_10.0.0.txt \"|UTF8|ERROR.txt\" UTF-8 -2\n",
+       "Example : php fromUnicodeDataToDefaultProfile.php 1UnicodeData_10.0.0.txt \"tp_UTF-8__ERROR.txt\" UTF-8 -2\n",
        "------------------------------------------------------------\n"
   ;
 
