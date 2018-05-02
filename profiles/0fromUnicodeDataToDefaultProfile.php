@@ -1,4 +1,22 @@
 <?php
+/*
+This file is part of transliteration_profile_iconv library.
+
+transliteration_profile_iconv is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+transliteration_profile_iconv is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licenses/>.
+
+©Copyright 2018 Laurent Lyaudet
+*/
 
 try{
 
@@ -94,9 +112,9 @@ catch(Exception $oException){
   echo $oException->getMessage(), "\n";
 
   echo "------------------------------------------------------------\n",
-       "----- Script fromUnicodeDataToDefaultProfile           -----\n",
+       "----- Script 0fromUnicodeDataToDefaultProfile           -----\n",
        "------------------------------------------------------------\n",
-       "Usage : php fromUnicodeDataToDefaultProfile.php @InputFileName@ @OutputFileName@ @UnicodeEncoding@ @DefaultValue@\n",
+       "Usage : php 0fromUnicodeDataToDefaultProfile.php @InputFileName@ @OutputFileName@ @UnicodeEncoding@ @DefaultValue@\n",
        "@InputFileName@ : name of the input file with unicode data, e.g. \"1UnicodeData_10.0.0.txt\"\n",
        "@OutputFileName@ : name of the output file with default transliteration profile, e.g. \"tp_UTF8__IGNORE.txt\"\n",
        "@UnicodeEncoding@ : name of the character encoding scheme of unicode characters, e.g. \"UTF-8\", \"UTF-16BE\", \"UTF-32BE\", \"UTF-16LE\", or \"UTF-32LE\"\n",
@@ -105,7 +123,7 @@ catch(Exception $oException){
        "                   -1 (ignore this character),\n",
        "                   -2, -3, ..., -128 (error on reading this character),\n",
        "                     this will be the error code returned so that you can freely dispatch characters into distinct error codes,\n",
-       "Example : php fromUnicodeDataToDefaultProfile.php 1UnicodeData_10.0.0.txt \"tp_UTF-8__ERROR.txt\" UTF-8 -2\n",
+       "Example : php 0fromUnicodeDataToDefaultProfile.php 1UnicodeData_10.0.0.txt \"tp_UTF-8__ERROR.txt\" UTF-8 -2\n",
        "------------------------------------------------------------\n"
   ;
 
