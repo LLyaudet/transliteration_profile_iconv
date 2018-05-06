@@ -17,6 +17,8 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 
 ©Copyright 2018 Laurent Lyaudet
 */
+const I_MAXIMUM_LENGTH_OF_TRANSLITERATION_PER_CHARACTER = (2**32 - 1);
+const I_MINIMUM_USER_DEFINED_ERROR_CODE = -(2**15);
 
 try{
 
@@ -50,24 +52,35 @@ try{
     throw new Exception('Please give the default value (arg 4).');
   }
   $sDefaultValue = $argv[4];
-  
-  if(ctype_xdigit($sDefaultValue)){
+  if($sDefaultValue === 'i'){
+    //This default value corresponds to "ignore this character".
+  }
+  elseif(ctype_xdigit($sDefaultValue)){
     $iLength = strlen($sDefaultValue);
     if($iLength % 2 === 1){
       throw new Exception('The default value must have a *pair* number of hexadecimal digits.');
     }
-    if($iLength > 254){//127 octets max
-      throw new Exception('The default value must not represent more than 127 octets (254 hexadecimal digits).');
+    if($iLength > I_MAXIMUM_LENGTH_OF_TRANSLITERATION_PER_CHARACTER*2){
+      throw new Exception(sprintf(
+          'The default value must not represent more than %s octets (%s hexadecimal digits).',
+          I_MAXIMUM_LENGTH_OF_TRANSLITERATION_PER_CHARACTER,
+          I_MAXIMUM_LENGTH_OF_TRANSLITERATION_PER_CHARACTER * 2
+      ));
     }
   }
   else{
     $sSigne = substr($sDefaultValue, 0, 1);
     $sEntier = substr($sDefaultValue, 1);
     if($sSigne !== '-' || !ctype_digit($sEntier)){
-      throw new Exception('The default value must be hexadecimal or a negative integer.');
+      throw new Exception('The default value must be the constant string "i", an hexadecimal string or a negative integer.');
     }
-    if(strlen($sEntier) > 3 || ((int)$sEntier) > 128){
-      throw new Exception('The default value must be greater than -128.');
+    if(strlen($sEntier) > strlen(I_MINIMUM_USER_DEFINED_ERROR_CODE * -1)
+      || ((int)$sEntier) > (I_MINIMUM_USER_DEFINED_ERROR_CODE * -1)
+    ){
+      throw new Exception(sprintf(
+          'The default value must be greater than %s.',
+          I_MINIMUM_USER_DEFINED_ERROR_CODE
+      ));
     }
   }
 
@@ -119,9 +132,10 @@ catch(Exception $oException){
        "@OutputFileName@ : name of the output file with default transliteration profile, e.g. \"tp_UTF8__IGNORE.txt\"\n",
        "@UnicodeEncoding@ : name of the character encoding scheme of unicode characters, e.g. \"UTF-8\", \"UTF-16BE\", \"UTF-32BE\", \"UTF-16LE\", or \"UTF-32LE\"\n",
        "@DefaultValue@ : the default value that will be the transliteration of all code points ;\n",
-       "                 it must be an hexadecimal string of pair length, or one of the following values:",
-       "                   -1 (ignore this character),\n",
-       "                   -2, -3, ..., -128 (error on reading this character),\n",
+       "                 it must be: or one of the following values:",
+       "                   the constant string \"i\" (ignore this character),\n",
+       "                   an hexadecimal string of pair length,\n",
+       "                   or a negative integer between -1 and ".I_MINIMUM_USER_DEFINED_ERROR_CODE." (user defined error code on reading this character),\n",
        "                     this will be the error code returned so that you can freely dispatch characters into distinct error codes,\n",
        "Example : php 0fromUnicodeDataToDefaultProfile.php 1UnicodeData_10.0.0.txt \"tp_UTF-8__ERROR.txt\" UTF-8 -2\n",
        "------------------------------------------------------------\n"
