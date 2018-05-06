@@ -44,9 +44,9 @@ try{
   }
   $sOutputEncoding = $argv[2];
 
-  $s = '';                     
+  $s = '';
   for($i = 0; $i < 256; ++$i){
-  
+
     $st = iconv($sInputEncoding, $sOutputEncoding, chr($i));
 
     $s .= getSHexFromTinyInt($i).' ';

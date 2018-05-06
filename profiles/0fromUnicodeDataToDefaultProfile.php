@@ -37,7 +37,7 @@ try{
     throw new Exception('Please give the unicode encoding (arg 3).');
   }
   $sUnicodeEncoding = $argv[3];
-  $arrSValidEncoding = [ 
+  $arrSValidEncoding = [
     'UTF-8',
     'UTF-16BE',
     'UTF-16LE',
@@ -102,7 +102,7 @@ try{
     }
     ++$i;
     try{
-      $sOutputContent .= 
+      $sOutputContent .=
           getSHexadecimalStringFrom($sLine, $sUnicodeEncoding)
          .' '.$sDefaultValue."\n";
       ;
@@ -125,14 +125,14 @@ catch(Exception $oException){
   echo $oException->getMessage(), "\n";
 
   echo "------------------------------------------------------------\n",
-       "----- Script 0fromUnicodeDataToDefaultProfile           -----\n",
+       "----- Script 0fromUnicodeDataToDefaultProfile          -----\n",
        "------------------------------------------------------------\n",
        "Usage : php 0fromUnicodeDataToDefaultProfile.php @InputFileName@ @OutputFileName@ @UnicodeEncoding@ @DefaultValue@\n",
        "@InputFileName@ : name of the input file with unicode data, e.g. \"1UnicodeData_10.0.0.txt\"\n",
        "@OutputFileName@ : name of the output file with default transliteration profile, e.g. \"tp_UTF8__IGNORE.txt\"\n",
        "@UnicodeEncoding@ : name of the character encoding scheme of unicode characters, e.g. \"UTF-8\", \"UTF-16BE\", \"UTF-32BE\", \"UTF-16LE\", or \"UTF-32LE\"\n",
        "@DefaultValue@ : the default value that will be the transliteration of all code points ;\n",
-       "                 it must be: or one of the following values:",
+       "                 it must be:\n",
        "                   the constant string \"i\" (ignore this character),\n",
        "                   an hexadecimal string of pair length,\n",
        "                   or a negative integer between -1 and ".I_MINIMUM_USER_DEFINED_ERROR_CODE." (user defined error code on reading this character),\n",
@@ -159,30 +159,30 @@ function getSHexadecimalStringFrom($sLine, $sUnicodeEncoding){
   $iCodePoint = hexdec($sCodePoint);
   switch($sUnicodeEncoding){
     case 'UTF-8':
-      if($iCodePoint <= 0x7F){ 
-        return getSHexFromTinyInt( $iCodePoint ); 
+      if($iCodePoint <= 0x7F){
+        return getSHexFromTinyInt( $iCodePoint );
       }
-      if($iCodePoint <= 0x07FF){ 
+      if($iCodePoint <= 0x07FF){
         return getSHexFromTinyInt( intdiv($iCodePoint, 64) + 192 )
-              .getSHexFromTinyInt( ($iCodePoint % 64) + 128 ); 
+              .getSHexFromTinyInt( ($iCodePoint % 64) + 128 );
       }
-      if($iCodePoint <= 0xFFFF){ 
+      if($iCodePoint <= 0xFFFF){
         return getSHexFromTinyInt( intdiv($iCodePoint, 64 * 64) + 224 )
               .getSHexFromTinyInt( (intdiv($iCodePoint, 64) % 64) + 128 )
-              .getSHexFromTinyInt( ($iCodePoint % 64) + 128 ); 
+              .getSHexFromTinyInt( ($iCodePoint % 64) + 128 );
       }
-      if($iCodePoint <= 0x10FFFF){ 
+      if($iCodePoint <= 0x10FFFF){
         return getSHexFromTinyInt( intdiv($iCodePoint, 64 * 64 * 64) + 240 )
               .getSHexFromTinyInt( (intdiv($iCodePoint, 64 * 64) % 64) + 128 )
               .getSHexFromTinyInt( (intdiv($iCodePoint, 64) % 64) + 128 )
-              .getSHexFromTinyInt( ($iCodePoint % 64) + 128 ); 
+              .getSHexFromTinyInt( ($iCodePoint % 64) + 128 );
       }
     throw new Exception(sprintf('The code point "%s" could not be converted to UTF-8.', $sCodePoint));
 
     case 'UTF-16BE':
-      if($iCodePoint <= 0xFFFF){ 
+      if($iCodePoint <= 0xFFFF){
         return getSHexFromTinyInt( intdiv($iCodePoint, 256) )
-              .getSHexFromTinyInt( $iCodePoint % 256 ); 
+              .getSHexFromTinyInt( $iCodePoint % 256 );
       }
       if($iCodePoint <= 0x10FFFF){
         $iCodePoint -= 0x10000;
@@ -191,14 +191,14 @@ function getSHexadecimalStringFrom($sLine, $sUnicodeEncoding){
         return getSHexFromTinyInt( intdiv($iHighSurrogate, 256) )
               .getSHexFromTinyInt( $iHighSurrogate % 256 )
               .getSHexFromTinyInt( intdiv($iLowSurrogate, 256) )
-              .getSHexFromTinyInt( $iLowSurrogate % 256 ); 
+              .getSHexFromTinyInt( $iLowSurrogate % 256 );
       }
     throw new Exception(sprintf('The code point "%s" could not be converted to UTF-16BE.', $sCodePoint));
-    
+
     case 'UTF-16LE':
-      if($iCodePoint <= 0xFFFF){ 
+      if($iCodePoint <= 0xFFFF){
         return getSHexFromTinyInt( $iCodePoint % 256 )
-              .getSHexFromTinyInt( intdiv($iCodePoint, 256) ); 
+              .getSHexFromTinyInt( intdiv($iCodePoint, 256) );
       }
       if($iCodePoint <= 0x10FFFF){
         $iCodePoint -= 0x10000;
@@ -207,7 +207,7 @@ function getSHexadecimalStringFrom($sLine, $sUnicodeEncoding){
         return getSHexFromTinyInt( $iHighSurrogate % 256 )
               .getSHexFromTinyInt( intdiv($iHighSurrogate, 256) )
               .getSHexFromTinyInt( $iLowSurrogate % 256 )
-              .getSHexFromTinyInt( intdiv($iLowSurrogate, 256) ); 
+              .getSHexFromTinyInt( intdiv($iLowSurrogate, 256) );
       }
     throw new Exception(sprintf('The code point "%s" could not be converted to UTF-16LE.', $sCodePoint));
 
@@ -216,7 +216,7 @@ function getSHexadecimalStringFrom($sLine, $sUnicodeEncoding){
         return '00'//getSHexFromTinyInt( intdiv($iCodePoint, 2**24) )
               .getSHexFromTinyInt( intdiv($iCodePoint % (2**24), 2**16) )
               .getSHexFromTinyInt( intdiv($iCodePoint % (2**16), 2**8) )
-              .getSHexFromTinyInt( $iCodePoint % 256 ); 
+              .getSHexFromTinyInt( $iCodePoint % 256 );
       }
     throw new Exception(sprintf('The code point "%s" could not be converted to UTF-32BE.', $sCodePoint));
 
