@@ -21,6 +21,7 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <errno.h>
 
 
@@ -39,25 +40,25 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 
 //Error codes
 //Positive error codes are defined in this library for algorithmical, profile parsing and technical errors
-#define I_ERROR__NO_PREFIX_FOUND 1;
-#define I_ERROR__COULD_NOT_OPEN_FILE 2;
-#define I_ERROR__COULD_NOT_ALLOCATE_MEMORY 3;
-#define I_ERROR__EMPTY_PROFILE 4;
-#define I_ERROR__LINE_MUST_START_WITH_HEXADECIMAL_DIGIT 5;
-#define I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT__EVEN_NUMBER_OF_DIGITS__INPUT_TUPLE 6;
-#define I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT__EVEN_NUMBER_OF_DIGITS__OUTPUT_TUPLE 7;
-#define I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT_OR_SPACE 8;
-#define I_ERROR__LINE_RETURN_EXPECTED 9;
-#define I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT_OR_A_LINE_RETURN 10;
-#define I_ERROR__LINE_MUST_CONTINUE_WITH_DECIMAL_DIGIT 11;
-#define I_ERROR__THE_ERROR_CODE_VALUE_IS_TOO_NEGATIVE 12;
-#define I_ERROR__NOT_YET_CODED 13;
-#define I_ERROR__COULD_NOT_WRITE_CHARACTER 14;
+#define I_ERROR__NO_PREFIX_FOUND 1
+#define I_ERROR__COULD_NOT_OPEN_FILE 2
+#define I_ERROR__COULD_NOT_ALLOCATE_MEMORY 3
+#define I_ERROR__EMPTY_PROFILE 4
+#define I_ERROR__LINE_MUST_START_WITH_HEXADECIMAL_DIGIT 5
+#define I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT__EVEN_NUMBER_OF_DIGITS__INPUT_TUPLE 6
+#define I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT__EVEN_NUMBER_OF_DIGITS__OUTPUT_TUPLE 7
+#define I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT_OR_SPACE 8
+#define I_ERROR__LINE_RETURN_EXPECTED 9
+#define I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT_OR_A_LINE_RETURN 10
+#define I_ERROR__LINE_MUST_CONTINUE_WITH_DECIMAL_DIGIT 11
+#define I_ERROR__THE_ERROR_CODE_VALUE_IS_TOO_NEGATIVE 12
+#define I_ERROR__NOT_YET_CODED 13
+#define I_ERROR__COULD_NOT_WRITE_CHARACTER 14
 //Negative error codes are user defined
 
 //Profile types
-#define I_PROFILE_TYPE__RAW 1;
-#define I_PROFILE_TYPE__SHRINK1 2;
+#define I_PROFILE_TYPE__RAW 1
+#define I_PROFILE_TYPE__SHRINK1 2
 
 
 //------------------------------------------------------------------------------------
@@ -67,11 +68,11 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 /**
  * The internal nodes for the transliteration profile
  */
-typedef struct {
+typedef struct transliteration_profile {
   unsigned long long i_node_index;
   unsigned char i_minimum_son;
   unsigned char i_maximum_son;
-  t_transliteration_node** arr_p_sons;
+  struct transliteration_profile** arr_p_sons;
   int i_status;
   unsigned long i_transliteration_size;
   unsigned long i_allocated_size;
@@ -93,17 +94,17 @@ typedef struct {
 
 
 //------------------------------------------------------------------------------------
-//Functions
+//External functions
 //------------------------------------------------------------------------------------
 /**
  * Transliteration profile management
  * Load a transliteration profile from a text file
  */
 int transliteration_profile_load_from_text(
-  char * s_filename,
+  char* s_filename,
   t_transliteration_profile** p_p_transliteration_profile,
-  size_t * p_i_current_line,
-  size_t * p_i_current_column,
+  size_t* p_i_current_line,
+  size_t* p_i_current_column
 );
 
 
@@ -113,9 +114,9 @@ int transliteration_profile_load_from_text(
  * Load a transliteration profile from a binary file
  */
 int transliteration_profile_load_from_bin(
-  char * s_filename,
+  char* s_filename,
   t_transliteration_profile** p_p_transliteration_profile,
-  size_t * p_i_current_offset
+  size_t* p_i_current_offset
 );
 
 
@@ -127,7 +128,7 @@ int transliteration_profile_load_from_bin(
 int transliteration_profile_compose(
   t_transliteration_profile* p_transliteration_profile_1,
   t_transliteration_profile* p_transliteration_profile_2,
-  t_transliteration_profile* p_transliteration_profile_result
+  t_transliteration_profile** p_p_transliteration_profile_result
 );
 
 
@@ -137,7 +138,7 @@ int transliteration_profile_compose(
  * Dump a transliteration profile to a text file
  */
 int transliteration_profile_dump_to_text(
-  char * s_filename,
+  char* s_filename,
   t_transliteration_profile* p_transliteration_profile
 );
 
@@ -148,7 +149,7 @@ int transliteration_profile_dump_to_text(
  * Dump a transliteration profile to a binary file
  */
 int transliteration_profile_dump_to_bin(
-  char * s_filename,
+  char* s_filename,
   t_transliteration_profile* p_transliteration_profile
 );
 
@@ -164,14 +165,59 @@ void transliteration_profile_free(t_transliteration_profile* p_transliteration_p
 
 /**
  * Transliteration profile use
- * 
+ *
  */
 int transliteration_profile_iconv(
   t_transliteration_profile* p_transliteration_profile,
-  char * s_input_string,
+  char* s_input_string,
   size_t i_size_input_string,
-  char * s_output_string,
-  size_t * i_size_output_string
+  char* s_output_string,
+  size_t* p_i_size_output_string
+);
+
+
+
+
+//------------------------------------------------------------------------------------
+//Internal functions
+//------------------------------------------------------------------------------------
+
+
+
+/**
+ * Transliteration profile management
+ * Free the memory of a raw transliteration profile node
+ */
+void transliteration_profile_free_node__raw(t_transliteration_node* p_transliteration_node);
+
+
+
+/**
+ * Transliteration profile management
+ * Free the memory of a shrinked transliteration profile node (shrink 1)
+ */
+void transliteration_profile_free_node__shrink1(t_transliteration_node* p_transliteration_node);
+
+
+
+/**
+ * Transliteration profile management
+ * Dump a raw transliteration profile to a text file
+ */
+int transliteration_profile_dump_to_text__raw(
+  char* s_filename,
+  t_transliteration_profile* p_transliteration_profile
+);
+
+
+
+/**
+ * Transliteration profile management
+ * Dump a shrinked transliteration profile to a text file (shrink1)
+ */
+int transliteration_profile_dump_to_text__shrink1(
+  char* s_filename,
+  t_transliteration_profile* p_transliteration_profile
 );
 
 

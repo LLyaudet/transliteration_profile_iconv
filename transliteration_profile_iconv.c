@@ -31,14 +31,15 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
  * Load a transliteration profile from a text file
  */
 int transliteration_profile_load_from_text(
-  char * s_filename,
+  char* s_filename,
   t_transliteration_profile** p_p_transliteration_profile,
-  size_t * p_i_current_line,
-  size_t * p_i_current_column,
+  size_t* p_i_current_line,
+  size_t* p_i_current_column
 ){
+  printf("A1");
   FILE * file = NULL;
   int c;//that's a char but getc returns an int
-  int i_current_read_state -1;
+  int i_current_read_state = -1;
   int i_error_code = 0;
   t_transliteration_node* p_root_node;
   t_transliteration_node* p_current_node;
@@ -48,9 +49,11 @@ int transliteration_profile_load_from_text(
   void* p_for_realloc = NULL;
   size_t i_size_for_realloc = 0;
 
+  printf("A1");
   *p_i_current_line = 0;
+  printf("A2");
   *p_i_current_column = 0;
-  
+
   //first we allocate the transliteration profile
   *p_p_transliteration_profile = (t_transliteration_profile*) calloc(1, sizeof(t_transliteration_profile));
   if(*p_p_transliteration_profile == NULL){
@@ -68,7 +71,7 @@ int transliteration_profile_load_from_text(
     return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
   }
   p_root_node = (*p_p_transliteration_profile)->p_root_node;
-  p_current_node = root_node;
+  p_current_node = p_root_node;
   ++((*p_p_transliteration_profile)->i_number_of_nodes);
   p_current_node->i_node_index = (*p_p_transliteration_profile)->i_number_of_nodes;
   p_current_node->i_minimum_son = 255;
@@ -87,7 +90,7 @@ int transliteration_profile_load_from_text(
   }
   for(int i = 0; i < 256; ++i){
     p_current_node->arr_p_sons[i] = NULL;
-  } 
+  }
 
   file = fopen(s_filename, "r");
   if(file == NULL){
@@ -112,7 +115,9 @@ int transliteration_profile_load_from_text(
 
   while((c = getc(file)) != EOF){
     ++(*p_i_current_column);
-    
+
+    printf("ligne %d colonne %d", *p_i_current_line, *p_i_current_column);
+
     switch(i_current_read_state){
       case -1://nothing read apart new lines
       case 0://just read a line return
@@ -131,7 +136,6 @@ int transliteration_profile_load_from_text(
         }
         else{
           i_error_code = I_ERROR__LINE_MUST_START_WITH_HEXADECIMAL_DIGIT;
-          break 2;
         }
       break;
 
@@ -161,11 +165,11 @@ int transliteration_profile_load_from_text(
             p_new_node->arr_p_sons = (t_transliteration_node**) calloc(256, sizeof(t_transliteration_node*));
             if(p_new_node->arr_p_sons == NULL){
               i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
-              break 2;
+              break;
             }
             for(int i = 0; i < 256; ++i){
               p_new_node->arr_p_sons[i] = NULL;
-            } 
+            }
             p_current_node->arr_p_sons[i_current_octet] = p_new_node;
             if(p_current_node->i_minimum_son > i_current_octet){
               p_current_node->i_minimum_son = i_current_octet;
@@ -178,7 +182,6 @@ int transliteration_profile_load_from_text(
         }
         else{
           i_error_code = I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT__EVEN_NUMBER_OF_DIGITS__INPUT_TUPLE;
-          break 2;
         }
       break;
 
@@ -196,7 +199,6 @@ int transliteration_profile_load_from_text(
         }
         else{
           i_error_code = I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT_OR_SPACE;
-          break 2;
         }
       break;
 
@@ -219,7 +221,6 @@ int transliteration_profile_load_from_text(
         }
         else{
           i_error_code = I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT_OR_SPACE;
-          break 2;
         }
       break;
 
@@ -232,7 +233,6 @@ int transliteration_profile_load_from_text(
         }
         else{
           i_error_code = I_ERROR__LINE_RETURN_EXPECTED;
-          break 2;
         }
       break;
 
@@ -251,14 +251,14 @@ int transliteration_profile_load_from_text(
             p_current_node->s_transliteration = (unsigned char*) calloc(1, sizeof(unsigned char));
             if(p_current_node->s_transliteration == NULL){
               i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
-              break 2;
+              break;
             }
             p_current_node->i_allocated_size = 1;
           }
           else if(p_current_node->i_allocated_size == p_current_node->i_transliteration_size){
             if(p_current_node->i_allocated_size == 2^32 - 1){
               i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
-              break 2;
+              break;
             }
             if(p_current_node->i_allocated_size > 2^30){
               i_size_for_realloc = 2^32 - 1;
@@ -269,7 +269,7 @@ int transliteration_profile_load_from_text(
             p_for_realloc = realloc(p_current_node->s_transliteration, i_size_for_realloc);
             if(p_for_realloc == NULL){
               i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
-              break 2;
+              break;
             }
             p_current_node->i_allocated_size = (unsigned long) i_size_for_realloc;
             p_current_node->s_transliteration = (unsigned char*) p_for_realloc;
@@ -278,11 +278,10 @@ int transliteration_profile_load_from_text(
         }
         else{
           i_error_code = I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT__EVEN_NUMBER_OF_DIGITS__OUTPUT_TUPLE;
-          break 2;
         }
       break;
 
-      case 6;//just read output tuple even hexadecimal digit
+      case 6://just read output tuple even hexadecimal digit
         if(c == '\n'){
           p_current_node->i_status = I_STATUS__VALID;
           i_current_read_state = 0;
@@ -300,7 +299,6 @@ int transliteration_profile_load_from_text(
         }
         else{
           i_error_code = I_ERROR__LINE_MUST_CONTINUE_WITH_HEXADECIMAL_DIGIT_OR_A_LINE_RETURN;
-          break 2;
         }
       break;
 
@@ -311,7 +309,6 @@ int transliteration_profile_load_from_text(
         }
         else{
           i_error_code = I_ERROR__LINE_MUST_CONTINUE_WITH_DECIMAL_DIGIT;
-          break 2;
         }
       break;
 
@@ -328,16 +325,19 @@ int transliteration_profile_load_from_text(
           i_status_for_node += c - '0';
           if(-i_status_for_node < I_MINIMUM_USER_DEFINED_ERROR_CODE){
             i_error_code = I_ERROR__THE_ERROR_CODE_VALUE_IS_TOO_NEGATIVE;
-            break 2;
+            break;
           }
         }
         else{
           i_error_code = I_ERROR__LINE_RETURN_EXPECTED;
-          break 2;
         }
       break;
+    }//fin switch(i_current_read_state)
+    if(i_error_code != 0){
+      break;
     }
-  }
+  }//fin while((c = getc(file)) != EOF)
+
   if(i_current_read_state == -1){
     i_error_code = I_ERROR__EMPTY_PROFILE;
   }
@@ -357,9 +357,9 @@ int transliteration_profile_load_from_text(
  * Load a transliteration profile from a binary file
  */
 int transliteration_profile_load_from_bin(
-  char * s_filename, 
+  char* s_filename,
   t_transliteration_profile** p_p_transliteration_profile,
-  size_t * p_i_current_offset
+  size_t* p_i_current_offset
 ){
   return I_ERROR__NOT_YET_CODED;
 }//end function transliteration_profile_load_from_bin()
@@ -385,13 +385,13 @@ int transliteration_profile_compose(
  * Dump a transliteration profile to a text file
  */
 int transliteration_profile_dump_to_text(
-  char * s_filename,
+  char* s_filename,
   t_transliteration_profile* p_transliteration_profile
 ){
   switch(p_transliteration_profile->i_profile_type){
     case I_PROFILE_TYPE__RAW:
     return transliteration_profile_dump_to_text__raw(s_filename, p_transliteration_profile);
- 
+
     case I_PROFILE_TYPE__SHRINK1:
     return transliteration_profile_dump_to_text__shrink1(s_filename, p_transliteration_profile);
   }
@@ -404,7 +404,7 @@ int transliteration_profile_dump_to_text(
  * Dump a transliteration profile to a binary file
  */
 int transliteration_profile_dump_to_bin(
-  char * s_filename,
+  char* s_filename,
   t_transliteration_profile* p_transliteration_profile
 ){
   return I_ERROR__NOT_YET_CODED;
@@ -416,12 +416,12 @@ int transliteration_profile_dump_to_bin(
  * Transliteration profile management
  * Free the memory of a transliteration profile
  */
-int transliteration_profile_free(t_transliteration_profile* p_transliteration_profile){
+void transliteration_profile_free(t_transliteration_profile* p_transliteration_profile){
   switch(p_transliteration_profile->i_profile_type){
     case I_PROFILE_TYPE__RAW:
       transliteration_profile_free_node__raw(p_transliteration_profile->p_root_node);
     break;
- 
+
     case I_PROFILE_TYPE__SHRINK1:
       transliteration_profile_free_node__shrink1(p_transliteration_profile->p_root_node);
     break;
@@ -434,14 +434,14 @@ int transliteration_profile_free(t_transliteration_profile* p_transliteration_pr
 
 /**
  * Transliteration profile use
- * 
+ *
  */
 int transliteration_profile_iconv(
   t_transliteration_profile* p_transliteration_profile,
-  char * s_input_string,
+  char* s_input_string,
   size_t i_size_input_string,
-  char * s_output_string,
-  size_t * i_size_output_string
+  char* s_output_string,
+  size_t* p_i_size_output_string
 ){
   return I_ERROR__NOT_YET_CODED;
 }//end function transliteration_profile_iconv()
@@ -475,7 +475,7 @@ void transliteration_profile_free_node__raw(t_transliteration_node* p_transliter
  * Transliteration profile management
  * Free the memory of a shrinked transliteration profile node (shrink 1)
  */
-void transliteration_profile_free_node__shrink1(t_transliteration_profile* p_transliteration_profile){
+void transliteration_profile_free_node__shrink1(t_transliteration_node* p_transliteration_node){
   //not yet
 }//end function transliteration_profile_free_node__shrink1()
 
@@ -486,7 +486,7 @@ void transliteration_profile_free_node__shrink1(t_transliteration_profile* p_tra
  * Dump a raw transliteration profile to a text file
  */
 int transliteration_profile_dump_to_text__raw(
-  char * s_filename,
+  char* s_filename,
   t_transliteration_profile* p_transliteration_profile
 ){
   FILE* file = NULL;
@@ -539,8 +539,11 @@ int transliteration_profile_dump_to_text__raw(
         for(size_t i = 0; i < i_current_depth; ++i){
           if(fprintf(file, "%02x", arr_prefix[i]) != 0){
             i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
-            break 2;
+            break;
           }
+        }
+        if(i_error_code != 0){
+          break;
         }
 
         //we print a space
@@ -567,8 +570,11 @@ int transliteration_profile_dump_to_text__raw(
             for(unsigned long i = 0; i < p_current_node->i_transliteration_size; ++i){
               if(fprintf(file, "%02x", p_current_node->s_transliteration[i]) != 0){
                 i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
-                break 2;
+                break;
               }
+            }
+            if(i_error_code != 0){
+              break;
             }
           }
         }
@@ -588,8 +594,8 @@ int transliteration_profile_dump_to_text__raw(
       //go forward one level
       //allocate if needed
       if(i_current_depth == i_allocated_depth - 1){
-        if(i_allocated_depth * sizeof(t_transliteration_node*) > SIZEMAX / 2
-          //|| i_allocated_depth * sizeof(int) > SIZEMAX / 2
+        if(i_allocated_depth * sizeof(t_transliteration_node*) > SIZE_MAX / 2
+          //|| i_allocated_depth * sizeof(int) > SIZE_MAX / 2
         ){
           i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
           break;
@@ -637,10 +643,11 @@ int transliteration_profile_dump_to_text__raw(
  * Dump a shrinked transliteration profile to a text file (shrink1)
  */
 int transliteration_profile_dump_to_text__shrink1(
-  char * s_filename,
+  char* s_filename,
   t_transliteration_profile* p_transliteration_profile
 ){
   return I_ERROR__NOT_YET_CODED;
 }//end function transliteration_profile_dump_to_text__shrink1()
+
 
 
