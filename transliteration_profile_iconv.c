@@ -36,7 +36,6 @@ int transliteration_profile_load_from_text(
   size_t* p_i_current_line,
   size_t* p_i_current_column
 ){
-  printf("A1");
   FILE * file = NULL;
   int c;//that's a char but getc returns an int
   int i_current_read_state = -1;
@@ -49,9 +48,17 @@ int transliteration_profile_load_from_text(
   void* p_for_realloc = NULL;
   size_t i_size_for_realloc = 0;
 
-  printf("A1");
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_load_from_text() %s %d %d %d\n",
+      s_filename,
+      p_p_transliteration_profile,
+      p_i_current_line,
+      p_i_current_column
+  );
+  #endif
+
   *p_i_current_line = 0;
-  printf("A2");
   *p_i_current_column = 0;
 
   //first we allocate the transliteration profile
@@ -115,8 +122,9 @@ int transliteration_profile_load_from_text(
 
   while((c = getc(file)) != EOF){
     ++(*p_i_current_column);
-
+    #ifdef DEBUG_TRANSLITERATION_PROFILE
     printf("ligne %d colonne %d", *p_i_current_line, *p_i_current_column);
+    #endif
 
     switch(i_current_read_state){
       case -1://nothing read apart new lines
@@ -361,6 +369,14 @@ int transliteration_profile_load_from_bin(
   t_transliteration_profile** p_p_transliteration_profile,
   size_t* p_i_current_offset
 ){
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_load_from_bin() %s %d %d\n",
+      s_filename,
+      p_p_transliteration_profile,
+      p_i_current_offset
+  );
+  #endif
   return I_ERROR__NOT_YET_CODED;
 }//end function transliteration_profile_load_from_bin()
 
@@ -375,6 +391,14 @@ int transliteration_profile_compose(
   t_transliteration_profile* p_transliteration_profile_2,
   t_transliteration_profile** p_p_transliteration_profile_result
 ){
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_compose() %d %d %d\n",
+      p_transliteration_profile_1,
+      p_transliteration_profile_2,
+      p_p_transliteration_profile_result
+  );
+  #endif
   return I_ERROR__NOT_YET_CODED;
 }//end function transliteration_profile_compose()
 
@@ -388,6 +412,13 @@ int transliteration_profile_dump_to_text(
   char* s_filename,
   t_transliteration_profile* p_transliteration_profile
 ){
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_dump_to_text() %s %d\n",
+      s_filename,
+      p_transliteration_profile
+  );
+  #endif
   switch(p_transliteration_profile->i_profile_type){
     case I_PROFILE_TYPE__RAW:
     return transliteration_profile_dump_to_text__raw(s_filename, p_transliteration_profile);
@@ -407,6 +438,13 @@ int transliteration_profile_dump_to_bin(
   char* s_filename,
   t_transliteration_profile* p_transliteration_profile
 ){
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_dump_to_bin() %s %d\n",
+      s_filename,
+      p_transliteration_profile
+  );
+  #endif
   return I_ERROR__NOT_YET_CODED;
 }//end function transliteration_profile_dump_to_bin()
 
@@ -418,14 +456,33 @@ int transliteration_profile_dump_to_bin(
  */
 void transliteration_profile_free(t_transliteration_profile* p_transliteration_profile){
 
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_free() %d\n",
+      p_transliteration_profile
+  );
+  #endif
+
   //nested function for prefix traversal
   int free_node_prefix(t_transliteration_node* p_transliteration_node){
+    #ifdef DEBUG_TRANSLITERATION_PROFILE
+    printf(
+        "Call: free_node_prefix() %d\n",
+        p_transliteration_node
+    );
+    #endif
     free(p_transliteration_node->s_transliteration);
     return 0;
   }
 
   //nested function for postfix traversal
   int free_node_postfix(t_transliteration_node* p_transliteration_node){
+    #ifdef DEBUG_TRANSLITERATION_PROFILE
+    printf(
+        "Call: free_node_prefix() %d\n",
+        free_node_postfix
+    );
+    #endif
     free(p_transliteration_node->arr_p_sons);
     free(p_transliteration_node);
     return 0;
@@ -452,6 +509,16 @@ int transliteration_profile_iconv(
   char* s_output_string,
   size_t* p_i_size_output_string
 ){
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_iconv() %d %d %d %d %d\n",
+      p_transliteration_profile,
+      (long long int)s_input_string,
+      i_size_input_string,
+      (long long int)s_output_string,
+      p_i_size_output_string
+  );
+  #endif
   return I_ERROR__NOT_YET_CODED;
 }//end function transliteration_profile_iconv()
 
@@ -473,6 +540,15 @@ int transliteration_profile_traversal(
   int (*p_function_prefix) (t_transliteration_node*),
   int (*p_function_postfix) (t_transliteration_node*)
 ){
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_traversal() %d %d %d\n",
+      p_transliteration_profile,
+      p_function_prefix,
+      p_function_postfix
+  );
+  #endif
+
   switch(p_transliteration_profile->i_profile_type){
     case I_PROFILE_TYPE__RAW:
     return transliteration_profile_traversal__raw_node(
@@ -482,7 +558,7 @@ int transliteration_profile_traversal(
     );
 
     case I_PROFILE_TYPE__SHRINK1:
-    return transliteration_profile_traversal__raw_node(
+    return transliteration_profile_traversal__shrink1_node(
         p_transliteration_profile->p_root_node,
         p_function_prefix,
         p_function_postfix
@@ -505,6 +581,16 @@ int transliteration_profile_traversal__raw_node(
   int (*p_function_postfix) (t_transliteration_node*)
 ){
   int i_result;
+
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_traversal__raw_node() %d %d %d\n",
+      p_transliteration_node,
+      p_function_prefix,
+      p_function_postfix
+  );
+  #endif
+
   i_result = (*p_function_prefix)(p_transliteration_node);
   if(i_result != 0){
     return i_result;
@@ -536,6 +622,16 @@ int transliteration_profile_traversal__shrink1_node(
   int (*p_function_prefix) (t_transliteration_node*),
   int (*p_function_postfix) (t_transliteration_node*)
 ){
+
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_traversal__shrink1_node() %d %d %d\n",
+      p_transliteration_node,
+      p_function_prefix,
+      p_function_postfix
+  );
+  #endif
+
   return I_ERROR__NOT_YET_CODED;
 }
 
@@ -559,6 +655,14 @@ int transliteration_profile_dump_to_text__raw(
   size_t i_size_for_realloc = 0;
   t_transliteration_node* p_current_node;
   int i_error_code = 0;
+
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_dump_to_text__raw() %s %d\n",
+      s_filename,
+      p_transliteration_profile
+  );
+  #endif
 
   file = fopen(s_filename, "w");
   if(file == NULL){
@@ -707,6 +811,15 @@ int transliteration_profile_dump_to_text__shrink1(
   char* s_filename,
   t_transliteration_profile* p_transliteration_profile
 ){
+ 
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_dump_to_text__shrink1() %s %d\n",
+      s_filename,
+      p_transliteration_profile
+  );
+  #endif
+
   return I_ERROR__NOT_YET_CODED;
 }//end function transliteration_profile_dump_to_text__shrink1()
 

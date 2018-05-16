@@ -17,6 +17,8 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 ©Copyright 2018 Laurent Lyaudet
 */
 
+#define DEBUG_TRANSLITERATION_PROFILE
+
 #include <unistd.h>
 //#include <dirent.h>
 #include "../../transliteration_profile_iconv.c"
