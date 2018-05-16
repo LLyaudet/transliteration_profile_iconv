@@ -54,6 +54,7 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 #define I_ERROR__THE_ERROR_CODE_VALUE_IS_TOO_NEGATIVE 12
 #define I_ERROR__NOT_YET_CODED 13
 #define I_ERROR__COULD_NOT_WRITE_CHARACTER 14
+#define I_ERROR__UNKNOWN_PROFILE_TYPE 15
 //Negative error codes are user defined
 
 //Profile types
@@ -186,17 +187,37 @@ int transliteration_profile_iconv(
 
 /**
  * Transliteration profile management
- * Free the memory of a raw transliteration profile node
+ * Traverse a transliteration profile
  */
-void transliteration_profile_free_node__raw(t_transliteration_node* p_transliteration_node);
+int transliteration_profile_traversal(
+  t_transliteration_profile* p_transliteration_profile,
+  int (*p_function_prefix) (t_transliteration_node*),
+  int (*p_function_postfix) (t_transliteration_node*)
+);
 
 
 
 /**
  * Transliteration profile management
- * Free the memory of a shrinked transliteration profile node (shrink 1)
+ * Traverse a raw transliteration profile from the current node
  */
-void transliteration_profile_free_node__shrink1(t_transliteration_node* p_transliteration_node);
+int transliteration_profile_traversal__raw_node(
+  t_transliteration_node* p_transliteration_node,
+  int (*p_function_prefix) (t_transliteration_node*),
+  int (*p_function_postfix) (t_transliteration_node*)
+);
+
+
+
+/**
+ * Transliteration profile management
+ * Traverse a shrinked transliteration profile from the current node
+ */
+int transliteration_profile_traversal__shrink1_node(
+  t_transliteration_node* p_transliteration_node,
+  int (*p_function_prefix) (t_transliteration_node*),
+  int (*p_function_postfix) (t_transliteration_node*)
+);
 
 
 

@@ -23,13 +23,35 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 
 
 
-void foo(
+__attribute__((noinline)) void foo(
   char* s_filename,
   t_transliteration_profile** p_p_transliteration_profile,
   size_t* p_i_current_line,
   size_t* p_i_current_column
 ){
-  printf("%s %d %d %d\n", s_filename, p_p_transliteration_profile, p_i_current_line, p_i_current_column);
+  printf(
+      "%s %d %d %d %d %d %d\n",
+      s_filename,
+      p_p_transliteration_profile,
+      p_i_current_line,
+      p_i_current_column,
+      *p_p_transliteration_profile,
+      *p_i_current_line,
+      *p_i_current_column
+  );
+  ++(*p_p_transliteration_profile);
+  ++(*p_i_current_line);
+  ++(*p_i_current_column);
+  printf(
+      "%s %d %d %d %d %d %d\n",
+      s_filename,
+      p_p_transliteration_profile,
+      p_i_current_line,
+      p_i_current_column,
+      *p_p_transliteration_profile,
+      *p_i_current_line,
+      *p_i_current_column
+  );
 }
 
 

@@ -332,11 +332,11 @@ int transliteration_profile_load_from_text(
           i_error_code = I_ERROR__LINE_RETURN_EXPECTED;
         }
       break;
-    }//fin switch(i_current_read_state)
+    }//end switch(i_current_read_state)
     if(i_error_code != 0){
       break;
     }
-  }//fin while((c = getc(file)) != EOF)
+  }//end while((c = getc(file)) != EOF)
 
   if(i_current_read_state == -1){
     i_error_code = I_ERROR__EMPTY_PROFILE;
@@ -417,16 +417,25 @@ int transliteration_profile_dump_to_bin(
  * Free the memory of a transliteration profile
  */
 void transliteration_profile_free(t_transliteration_profile* p_transliteration_profile){
-  switch(p_transliteration_profile->i_profile_type){
-    case I_PROFILE_TYPE__RAW:
-      transliteration_profile_free_node__raw(p_transliteration_profile->p_root_node);
-    break;
 
-    case I_PROFILE_TYPE__SHRINK1:
-      transliteration_profile_free_node__shrink1(p_transliteration_profile->p_root_node);
-    break;
+  //nested function for prefix traversal
+  int free_node_prefix(t_transliteration_node* p_transliteration_node){
+    free(p_transliteration_node->s_transliteration);
+    return 0;
   }
 
+  //nested function for postfix traversal
+  int free_node_postfix(t_transliteration_node* p_transliteration_node){
+    free(p_transliteration_node->arr_p_sons);
+    free(p_transliteration_node);
+    return 0;
+  }
+
+  transliteration_profile_traversal(
+      p_transliteration_profile,
+      (&free_node_prefix),
+      (&free_node_postfix)
+  );
   free(p_transliteration_profile);
 }//end function transliteration_profile_free()
 
@@ -457,27 +466,79 @@ int transliteration_profile_iconv(
 
 /**
  * Transliteration profile management
- * Free the memory of a raw transliteration profile node
+ * Traverse a transliteration profile
  */
-void transliteration_profile_free_node__raw(t_transliteration_node* p_transliteration_node){
-  free(p_transliteration_node->s_transliteration);
-  for(int i = 0; i < 256; ++i){
-    if(p_transliteration_node->arr_p_sons[i] != NULL){
-      transliteration_profile_free_node__raw(p_transliteration_node->arr_p_sons[i]);
-    }
+int transliteration_profile_traversal(
+  t_transliteration_profile* p_transliteration_profile,
+  int (*p_function_prefix) (t_transliteration_node*),
+  int (*p_function_postfix) (t_transliteration_node*)
+){
+  switch(p_transliteration_profile->i_profile_type){
+    case I_PROFILE_TYPE__RAW:
+    return transliteration_profile_traversal__raw_node(
+        p_transliteration_profile->p_root_node,
+        p_function_prefix,
+        p_function_postfix
+    );
+
+    case I_PROFILE_TYPE__SHRINK1:
+    return transliteration_profile_traversal__raw_node(
+        p_transliteration_profile->p_root_node,
+        p_function_prefix,
+        p_function_postfix
+    );
+
+    default:
+    return I_ERROR__UNKNOWN_PROFILE_TYPE;
   }
-  free(p_transliteration_node);
-}//end function transliteration_profile_free_node__raw()
+}//end function transliteration_profile_traversal()
 
 
 
 /**
  * Transliteration profile management
- * Free the memory of a shrinked transliteration profile node (shrink 1)
+ * Traverse a raw transliteration profile from the current node
  */
-void transliteration_profile_free_node__shrink1(t_transliteration_node* p_transliteration_node){
-  //not yet
-}//end function transliteration_profile_free_node__shrink1()
+int transliteration_profile_traversal__raw_node(
+  t_transliteration_node* p_transliteration_node,
+  int (*p_function_prefix) (t_transliteration_node*),
+  int (*p_function_postfix) (t_transliteration_node*)
+){
+  int i_result;
+  i_result = (*p_function_prefix)(p_transliteration_node);
+  if(i_result != 0){
+    return i_result;
+  }
+  for(int i = 0; i < 256; ++i){
+    if(p_transliteration_node->arr_p_sons[i] != NULL){
+      i_result = transliteration_profile_traversal__raw_node(
+          p_transliteration_node->arr_p_sons[i],
+          p_function_prefix,
+          p_function_postfix
+      );
+      if(i_result != 0){
+        return i_result;
+      }
+    }
+  }
+  i_result = (*p_function_postfix)(p_transliteration_node);
+  return i_result;
+}
+
+
+
+/**
+ * Transliteration profile management
+ * Traverse a shrinked transliteration profile from the current node
+ */
+int transliteration_profile_traversal__shrink1_node(
+  t_transliteration_node* p_transliteration_node,
+  int (*p_function_prefix) (t_transliteration_node*),
+  int (*p_function_postfix) (t_transliteration_node*)
+){
+  return I_ERROR__NOT_YET_CODED;
+}
+
 
 
 
