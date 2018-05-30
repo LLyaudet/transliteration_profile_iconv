@@ -23,6 +23,7 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 #include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
+#include <string.h>
 
 
 
@@ -55,6 +56,8 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 #define I_ERROR__NOT_YET_CODED 13
 #define I_ERROR__COULD_NOT_WRITE_CHARACTER 14
 #define I_ERROR__UNKNOWN_PROFILE_TYPE 15
+#define I_ERROR__WRONG_PROFILE_TYPE 16
+#define I_ERROR__INCOMPATIBLE_PROFILE_TYPES 17
 //Negative error codes are user defined
 
 //Profile types
@@ -69,11 +72,11 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 /**
  * The internal nodes for the transliteration profile
  */
-typedef struct transliteration_profile {
+typedef struct transliteration_node {
   unsigned long long i_node_index;
   unsigned char i_minimum_son;
   unsigned char i_maximum_son;
-  struct transliteration_profile** arr_p_sons;
+  struct transliteration_node** arr_p_sons;
   int i_status;
   unsigned long i_transliteration_size;
   unsigned long i_allocated_size;
@@ -87,7 +90,8 @@ typedef struct transliteration_profile {
  */
 typedef struct {
   int i_profile_type;
-  unsigned long long i_number_of_nodes;
+  size_t i_number_of_nodes;
+  size_t i_max_depth;
   t_transliteration_node* p_root_node;
 } t_transliteration_profile;
 
@@ -239,6 +243,17 @@ int transliteration_profile_dump_to_text__raw(
 int transliteration_profile_dump_to_text__shrink1(
   char* s_filename,
   t_transliteration_profile* p_transliteration_profile
+);
+
+
+
+/**
+ * Transliteration profile management
+ * Shrink a raw transliteration profile (shrink1)
+ */
+int transliteration_profile_from_raw_to_shrink1(
+  t_transliteration_profile* p_transliteration_profile_from,
+  t_transliteration_profile** p_p_transliteration_profile_to
 );
 
 

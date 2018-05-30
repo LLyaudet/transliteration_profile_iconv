@@ -68,6 +68,7 @@ int transliteration_profile_load_from_text(
   }
   (*p_p_transliteration_profile)->i_profile_type = I_PROFILE_TYPE__RAW;
   (*p_p_transliteration_profile)->i_number_of_nodes = 0;
+  (*p_p_transliteration_profile)->i_max_depth = 0;
   (*p_p_transliteration_profile)->p_root_node = NULL;
 
   //and we allocate the root node
@@ -184,6 +185,9 @@ int transliteration_profile_load_from_text(
             }
             if(p_current_node->i_maximum_son < i_current_octet){
               p_current_node->i_maximum_son = i_current_octet;
+            }
+            if((*p_i_current_column / 2) > (*p_p_transliteration_profile)->i_max_depth){
+              (*p_p_transliteration_profile)->i_max_depth = *p_i_current_column / 2;
             }
           }
           p_current_node = p_current_node->arr_p_sons[i_current_octet];
@@ -669,19 +673,25 @@ int transliteration_profile_dump_to_text__raw(
     return I_ERROR__COULD_NOT_OPEN_FILE;
   }
 
-  arr_prefix = (int*) calloc(8, sizeof(int));
+  arr_prefix = (int*) calloc(
+      p_transliteration_profile->i_max_depth,
+      sizeof(int)
+  );
   if(arr_prefix == NULL){
     fclose(file);
     return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
   }
 
-  arr_p_ascendants = (t_transliteration_node**) calloc(8, sizeof(t_transliteration_node*));
+  arr_p_ascendants = (t_transliteration_node**) calloc(
+      p_transliteration_profile->i_max_depth,
+      sizeof(t_transliteration_node*)
+  );
   if(arr_p_ascendants == NULL){
     fclose(file);
     free(arr_prefix);
     return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
   }
-  i_allocated_depth = 8;
+  i_allocated_depth = p_transliteration_profile->i_max_depth;
 
   p_current_node = p_transliteration_profile->p_root_node;
   arr_p_ascendants[0] = p_current_node;
@@ -811,7 +821,7 @@ int transliteration_profile_dump_to_text__shrink1(
   char* s_filename,
   t_transliteration_profile* p_transliteration_profile
 ){
- 
+
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
       "Call: transliteration_profile_dump_to_text__shrink1() %s %d\n",
@@ -822,6 +832,212 @@ int transliteration_profile_dump_to_text__shrink1(
 
   return I_ERROR__NOT_YET_CODED;
 }//end function transliteration_profile_dump_to_text__shrink1()
+
+
+
+/**
+ * Transliteration profile management
+ * Shrink a raw transliteration profile (shrink1)
+ */
+int transliteration_profile_from_raw_to_shrink1(
+  t_transliteration_profile* p_transliteration_profile_from,
+  t_transliteration_profile** p_p_transliteration_profile_to
+){
+  int* arr_prefix = NULL;
+  t_transliteration_node** arr_p_ascendants = NULL;
+  size_t i_current_depth = 0;
+  t_transliteration_node* p_root_node_shrink;
+  t_transliteration_node* p_current_node_raw;
+  t_transliteration_node* p_current_node_shrink;
+
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_from_raw_to_shrink1() %d %d\n",
+      p_transliteration_profile_from,
+      p_p_transliteration_profile_to
+  );
+  #endif
+
+  if(p_transliteration_profile_from->i_profile_type != I_PROFILE_TYPE__RAW){
+    return I_ERROR__WRONG_PROFILE_TYPE;
+  }
+
+  arr_prefix = (int*) calloc(
+      p_transliteration_profile_from->i_max_depth,
+      sizeof(int)
+  );
+  if(arr_prefix == NULL){
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  arr_p_ascendants = (t_transliteration_node**) calloc(
+      p_transliteration_profile_from->i_max_depth,
+      sizeof(t_transliteration_node*)
+  );
+  if(arr_p_ascendants == NULL){
+    free(arr_prefix);
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  //first we allocate the transliteration profile
+  *p_p_transliteration_profile_to = (t_transliteration_profile*) calloc(1, sizeof(t_transliteration_profile));
+  if(*p_p_transliteration_profile_to == NULL){
+    free(arr_prefix);
+    free(arr_p_ascendants);
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+  (*p_p_transliteration_profile_to)->i_profile_type = I_PROFILE_TYPE__SHRINK1;
+  (*p_p_transliteration_profile_to)->i_number_of_nodes = p_transliteration_profile_from->i_number_of_nodes;
+  (*p_p_transliteration_profile_to)->i_max_depth = p_transliteration_profile_from->i_max_depth;
+  (*p_p_transliteration_profile_to)->p_root_node = NULL;
+
+  //and we allocate all the nodes
+  (*p_p_transliteration_profile_to)->p_root_node = (t_transliteration_node*) calloc(
+      p_transliteration_profile_from->i_number_of_nodes,
+      sizeof(t_transliteration_node)
+  );
+  if((*p_p_transliteration_profile_to)->p_root_node == NULL){
+    free(arr_prefix);
+    free(arr_p_ascendants);
+    free(*p_p_transliteration_profile_to);
+    *p_p_transliteration_profile_to = NULL;
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  p_current_node_raw = p_transliteration_profile_from->p_root_node;
+  p_root_node_shrink = (*p_p_transliteration_profile_to)->p_root_node;
+  p_current_node_shrink = p_root_node_shrink;
+
+  p_current_node_shrink->i_node_index = p_current_node_raw->i_node_index;
+  p_current_node_shrink->i_minimum_son = p_current_node_raw->i_minimum_son;
+  p_current_node_shrink->i_maximum_son = p_current_node_raw->i_maximum_son;
+  p_current_node_shrink->arr_p_sons = NULL;
+  p_current_node_shrink->i_status = p_current_node_raw->i_status;
+  p_current_node_shrink->i_transliteration_size = p_current_node_raw->i_transliteration_size;
+  p_current_node_shrink->i_allocated_size = p_current_node_raw->i_transliteration_size;//we don't need extra space
+  p_current_node_shrink->s_transliteration = NULL;
+  //with its array of sons
+  if(p_current_node_shrink->i_maximum_son >= p_current_node_shrink->i_minimum_son){
+    p_current_node_shrink->arr_p_sons = (t_transliteration_node**) calloc(
+        p_current_node_shrink->i_maximum_son - p_current_node_shrink->i_minimum_son + 1,
+        sizeof(t_transliteration_node*)
+    );
+    if(p_current_node_shrink->arr_p_sons == NULL){
+      free(arr_prefix);
+      free(arr_p_ascendants);
+      transliteration_profile_free(*p_p_transliteration_profile_to);
+      *p_p_transliteration_profile_to = NULL;
+      return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+    }
+    for(int i = 0; i < p_current_node_shrink->i_maximum_son - p_current_node_shrink->i_minimum_son + 1; ++i){
+      p_current_node_shrink->arr_p_sons[i] = NULL;
+    }
+  }
+  //and its transliteration string
+  if(p_current_node_shrink->i_transliteration_size > 0){
+    p_current_node_shrink->s_transliteration = (unsigned char*) calloc(
+        p_current_node_shrink->i_transliteration_size,
+        sizeof(unsigned char)
+    );
+    if(p_current_node_shrink->s_transliteration == NULL){
+      free(arr_prefix);
+      free(arr_p_ascendants);
+      transliteration_profile_free(*p_p_transliteration_profile_to);
+      *p_p_transliteration_profile_to = NULL;
+      return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+    }
+  }
+  memcpy(
+      p_current_node_shrink->s_transliteration,
+      p_current_node_raw->s_transliteration,
+      p_current_node_shrink->i_transliteration_size
+  );
+
+  arr_p_ascendants[0] = p_current_node_raw;
+  arr_prefix[0] = 0;
+
+  while(p_current_node_raw != NULL){
+    if(arr_prefix[i_current_depth] > 255){
+      //we're done with the sons
+
+      if(i_current_depth == 0){
+        //we're done
+        break;
+      }
+
+      //go back one level
+      --i_current_depth;
+      ++arr_prefix[i_current_depth];
+      p_current_node_raw = arr_p_ascendants[i_current_depth];
+      continue;
+    }//end if(arr_prefix[i_current_depth] > 255)
+
+    if(p_current_node_raw->arr_p_sons[arr_prefix[i_current_depth]] != NULL){
+      //go forward one level
+      p_current_node_raw = p_current_node_raw->arr_p_sons[arr_prefix[i_current_depth]];
+      p_current_node_shrink->arr_p_sons[
+          arr_prefix[i_current_depth] - p_current_node_shrink->i_minimum_son
+      ] = &(p_root_node_shrink[p_current_node_raw->i_node_index - 1]);
+      p_current_node_shrink = &(p_root_node_shrink[p_current_node_raw->i_node_index - 1]);
+      ++i_current_depth;
+      arr_prefix[i_current_depth] = 0;
+      arr_p_ascendants[i_current_depth] = p_current_node_raw;
+
+      //we copy the node content
+      p_current_node_shrink->i_node_index = p_current_node_raw->i_node_index;
+      p_current_node_shrink->i_minimum_son = p_current_node_raw->i_minimum_son;
+      p_current_node_shrink->i_maximum_son = p_current_node_raw->i_maximum_son;
+      p_current_node_shrink->arr_p_sons = NULL;
+      p_current_node_shrink->i_status = p_current_node_raw->i_status;
+      p_current_node_shrink->i_transliteration_size = p_current_node_raw->i_transliteration_size;
+      p_current_node_shrink->i_allocated_size = p_current_node_raw->i_transliteration_size;//we don't need extra space
+      p_current_node_shrink->s_transliteration = NULL;
+      //with its array of sons
+      if(p_current_node_shrink->i_maximum_son >= p_current_node_shrink->i_minimum_son){
+        p_current_node_shrink->arr_p_sons = (t_transliteration_node**) calloc(
+            p_current_node_shrink->i_maximum_son - p_current_node_shrink->i_minimum_son + 1,
+            sizeof(t_transliteration_node*)
+        );
+        if(p_current_node_shrink->arr_p_sons == NULL){
+          free(arr_prefix);
+          free(arr_p_ascendants);
+          transliteration_profile_free(*p_p_transliteration_profile_to);
+          *p_p_transliteration_profile_to = NULL;
+          return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+        }
+        for(int i = 0; i < p_current_node_shrink->i_maximum_son - p_current_node_shrink->i_minimum_son + 1; ++i){
+          p_current_node_shrink->arr_p_sons[i] = NULL;
+        }
+      }
+      //and its transliteration string
+      if(p_current_node_shrink->i_transliteration_size > 0){
+        p_current_node_shrink->s_transliteration = (unsigned char*) calloc(
+            p_current_node_shrink->i_transliteration_size,
+            sizeof(unsigned char)
+        );
+        if(p_current_node_shrink->s_transliteration == NULL){
+          free(arr_prefix);
+          free(arr_p_ascendants);
+          transliteration_profile_free(*p_p_transliteration_profile_to);
+          *p_p_transliteration_profile_to = NULL;
+          return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+        }
+      }
+      memcpy(
+          p_current_node_shrink->s_transliteration,
+          p_current_node_raw->s_transliteration,
+          p_current_node_shrink->i_transliteration_size
+      );
+      continue;
+    }//end if(p_current_node_raw->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
+
+    ++arr_prefix[i_current_depth];
+  }
+  while(0);
+
+  return 0;
+}//end function transliteration_profile_from_raw_to_shrink1()
+
 
 
 
