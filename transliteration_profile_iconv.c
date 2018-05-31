@@ -653,7 +653,6 @@ int transliteration_profile_dump_to_text__raw(
   FILE* file = NULL;
   int* arr_prefix = NULL;
   t_transliteration_node** arr_p_ascendants = NULL;
-  size_t i_allocated_depth = 0;
   size_t i_current_depth = 0;
   void* p_for_realloc = NULL;
   size_t i_size_for_realloc = 0;
@@ -674,7 +673,7 @@ int transliteration_profile_dump_to_text__raw(
   }
 
   arr_prefix = (int*) calloc(
-      p_transliteration_profile->i_max_depth,
+      p_transliteration_profile->i_max_depth + 1,//root node has depth 0
       sizeof(int)
   );
   if(arr_prefix == NULL){
@@ -683,7 +682,7 @@ int transliteration_profile_dump_to_text__raw(
   }
 
   arr_p_ascendants = (t_transliteration_node**) calloc(
-      p_transliteration_profile->i_max_depth,
+      p_transliteration_profile->i_max_depth + 1,//root node has depth 0
       sizeof(t_transliteration_node*)
   );
   if(arr_p_ascendants == NULL){
@@ -691,7 +690,6 @@ int transliteration_profile_dump_to_text__raw(
     free(arr_prefix);
     return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
   }
-  i_allocated_depth = p_transliteration_profile->i_max_depth;
 
   p_current_node = p_transliteration_profile->p_root_node;
   arr_p_ascendants[0] = p_current_node;
@@ -767,33 +765,6 @@ int transliteration_profile_dump_to_text__raw(
 
     if(p_current_node->arr_p_sons[arr_prefix[i_current_depth]] != NULL){
       //go forward one level
-      //allocate if needed
-      if(i_current_depth == i_allocated_depth - 1){
-        if(i_allocated_depth * sizeof(t_transliteration_node*) > SIZE_MAX / 2
-          //|| i_allocated_depth * sizeof(int) > SIZE_MAX / 2
-        ){
-          i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
-          break;
-        }
-
-        i_size_for_realloc = i_allocated_depth * sizeof(int) * 2;
-        p_for_realloc = realloc(arr_prefix, i_size_for_realloc);
-        if(p_for_realloc == NULL){
-          i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
-          break;
-        }
-        arr_prefix = (int*) p_for_realloc;
-
-        i_size_for_realloc = i_allocated_depth * sizeof(t_transliteration_node*) * 2;
-        p_for_realloc = realloc(arr_p_ascendants, i_size_for_realloc);
-        if(p_for_realloc == NULL){
-          i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
-          break;
-        }
-        arr_p_ascendants = (t_transliteration_node**) p_for_realloc;
-      }
-
-      //go forward one level
       p_current_node = p_current_node->arr_p_sons[arr_prefix[i_current_depth]];
       ++i_current_depth;
       arr_prefix[i_current_depth] = 0;
@@ -863,7 +834,7 @@ int transliteration_profile_from_raw_to_shrink1(
   }
 
   arr_prefix = (int*) calloc(
-      p_transliteration_profile_from->i_max_depth,
+      p_transliteration_profile_from->i_max_depth + 1,//root node has depth 0
       sizeof(int)
   );
   if(arr_prefix == NULL){
@@ -871,7 +842,7 @@ int transliteration_profile_from_raw_to_shrink1(
   }
 
   arr_p_ascendants = (t_transliteration_node**) calloc(
-      p_transliteration_profile_from->i_max_depth,
+      p_transliteration_profile_from->i_max_depth + 1,//root node has depth 0
       sizeof(t_transliteration_node*)
   );
   if(arr_p_ascendants == NULL){
