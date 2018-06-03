@@ -19,7 +19,7 @@
 build-tests: build-test1
 
 build-test1:
-	gcc ./tests_benchmarks/test1/test1.c -o ./tests_benchmarks/test1/test1.exe
+	gcc -W ./tests_benchmarks/test1/test1.c -o ./tests_benchmarks/test1/test1.exe
 
 clean:
 	rm -f ./tests_benchmarks/test1/*.exe

@@ -31,8 +31,8 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 //Constants
 //------------------------------------------------------------------------------------
 //Limitations
-#define I_MAXIMUM_LENGTH_OF_TRANSLITERATION_PER_CHARACTER (2^32 - 1)
-#define I_MINIMUM_USER_DEFINED_ERROR_CODE (-(2^15))
+#define I_MAXIMUM_LENGTH_OF_TRANSLITERATION_PER_CHARACTER (((long long int)1 << 32) - 1)
+#define I_MINIMUM_USER_DEFINED_ERROR_CODE (-((long int)1 << 15))
 
 //Status constants
 #define I_STATUS__SKIP 0
