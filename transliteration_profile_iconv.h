@@ -174,10 +174,11 @@ void transliteration_profile_free(t_transliteration_profile* p_transliteration_p
  */
 int transliteration_profile_iconv(
   t_transliteration_profile* p_transliteration_profile,
-  char* s_input_string,
+  unsigned char* s_input_string,
   size_t i_size_input_string,
-  char* s_output_string,
-  size_t* p_i_size_output_string
+  unsigned char** p_s_output_string,
+  size_t* p_i_size_output_string,
+  size_t* p_i_current_read_offset
 );
 
 
@@ -254,6 +255,36 @@ int transliteration_profile_dump_to_text__shrink1(
 int transliteration_profile_from_raw_to_shrink1(
   t_transliteration_profile* p_transliteration_profile_from,
   t_transliteration_profile** p_p_transliteration_profile_to
+);
+
+
+
+/**
+ * Transliteration profile use
+ *
+ */
+int transliteration_profile_iconv__raw(
+  t_transliteration_profile* p_transliteration_profile,
+  unsigned char* s_input_string,
+  size_t i_size_input_string,
+  unsigned char** p_s_output_string,
+  size_t* p_i_size_output_string,
+  size_t* p_i_current_read_offset
+);
+
+
+
+/**
+ * Transliteration profile use
+ *
+ */
+int transliteration_profile_iconv__shrink1(
+  t_transliteration_profile* p_transliteration_profile,
+  unsigned char* s_input_string,
+  size_t i_size_input_string,
+  unsigned char** p_s_output_string,
+  size_t* p_i_size_output_string,
+  size_t* p_i_current_read_offset
 );
 
 

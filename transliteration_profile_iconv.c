@@ -534,22 +534,49 @@ void transliteration_profile_free(t_transliteration_profile* p_transliteration_p
  */
 int transliteration_profile_iconv(
   t_transliteration_profile* p_transliteration_profile,
-  char* s_input_string,
+  unsigned char* s_input_string,
   size_t i_size_input_string,
-  char* s_output_string,
-  size_t* p_i_size_output_string
+  unsigned char** p_s_output_string,
+  size_t* p_i_size_output_string,
+  size_t* p_i_current_read_offset//for debug if needed
 ){
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_iconv() %d %d %d %d %d\n",
+      "Call: transliteration_profile_iconv() %d %d %d %d %d %d\n",
       p_transliteration_profile,
       (long long int)s_input_string,
       i_size_input_string,
-      (long long int)s_output_string,
-      p_i_size_output_string
+      p_s_output_string,
+      p_i_size_output_string,
+      p_i_current_read_offset
   );
   #endif
-  return I_ERROR__NOT_YET_CODED;
+
+  switch(p_transliteration_profile->i_profile_type){
+    case I_PROFILE_TYPE__RAW:
+    return transliteration_profile_iconv__raw(
+        p_transliteration_profile,
+        s_input_string,
+        i_size_input_string,
+        p_s_output_string,
+        p_i_size_output_string,
+        p_i_current_read_offset
+    );
+
+    case I_PROFILE_TYPE__SHRINK1:
+    return transliteration_profile_iconv__shrink1(
+        p_transliteration_profile,
+        s_input_string,
+        i_size_input_string,
+        p_s_output_string,
+        p_i_size_output_string,
+        p_i_current_read_offset
+    );
+
+    default:
+    return I_ERROR__UNKNOWN_PROFILE_TYPE;
+  }
+
 }//end function transliteration_profile_iconv()
 
 
@@ -975,12 +1002,12 @@ int transliteration_profile_from_raw_to_shrink1(
       *p_p_transliteration_profile_to = NULL;
       return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
     }
+    memcpy(
+        p_current_node_shrink->s_transliteration,
+        p_current_node_raw->s_transliteration,
+        p_current_node_shrink->i_transliteration_size
+    );
   }
-  memcpy(
-      p_current_node_shrink->s_transliteration,
-      p_current_node_raw->s_transliteration,
-      p_current_node_shrink->i_transliteration_size
-  );
 
   arr_p_ascendants[0] = p_current_node_raw;
   arr_prefix[0] = 0;
@@ -998,6 +1025,7 @@ int transliteration_profile_from_raw_to_shrink1(
       --i_current_depth;
       ++arr_prefix[i_current_depth];
       p_current_node_raw = arr_p_ascendants[i_current_depth];
+      p_current_node_shrink = &(p_root_node_shrink[p_current_node_raw->i_node_index - 1]);
       continue;
     }//end if(arr_prefix[i_current_depth] > 255)
 
@@ -1050,12 +1078,13 @@ int transliteration_profile_from_raw_to_shrink1(
           *p_p_transliteration_profile_to = NULL;
           return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
         }
-      }
-      memcpy(
-          p_current_node_shrink->s_transliteration,
-          p_current_node_raw->s_transliteration,
-          p_current_node_shrink->i_transliteration_size
-      );
+        memcpy(
+            p_current_node_shrink->s_transliteration,
+            p_current_node_raw->s_transliteration,
+            p_current_node_shrink->i_transliteration_size
+        );
+      }//end if(p_current_node_shrink->i_transliteration_size > 0)
+
       continue;
     }//end if(p_current_node_raw->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
 
@@ -1066,6 +1095,242 @@ int transliteration_profile_from_raw_to_shrink1(
   return 0;
 }//end function transliteration_profile_from_raw_to_shrink1()
 
+
+
+/**
+ * Transliteration profile use
+ *
+ */
+int transliteration_profile_iconv__raw(
+  t_transliteration_profile* p_transliteration_profile,
+  unsigned char* s_input_string,
+  size_t i_size_input_string,
+  unsigned char** p_s_output_string,
+  size_t* p_i_size_output_string,
+  size_t* p_i_current_read_offset
+){
+  size_t i_allocated_length_output_string = 0;
+  size_t i_new_allocated_length_output_string = 0;
+  size_t i_current_write_offset = 0;
+  size_t i_offset_since_last_prefix_match = 0;
+  t_transliteration_node* p_transliteration_node_root = NULL;
+  t_transliteration_node* p_transliteration_node_last_match = NULL;
+  t_transliteration_node* p_transliteration_node_current = NULL;
+  void* p_for_realloc = NULL;
+  size_t i_size_for_realloc = 0;
+
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_iconv__raw() %d %d %d %d %d %d\n",
+      p_transliteration_profile,
+      (long long int)s_input_string,
+      i_size_input_string,
+      p_s_output_string,
+      p_i_size_output_string,
+      p_i_current_read_offset
+  );
+  #endif
+
+  p_transliteration_node_root = p_transliteration_profile->p_root_node;
+  *p_s_output_string = NULL;
+  *p_i_size_output_string = 0;
+  *p_i_current_read_offset = 0;
+
+  //Outer loop : read and transliterate until end of input string
+  while(*p_i_current_read_offset < i_size_input_string){
+    p_transliteration_node_last_match = NULL;
+    p_transliteration_node_current = p_transliteration_node_root;
+    //Inner loop : read until no lengthier prefix is found
+    while(*p_i_current_read_offset < i_size_input_string
+      && p_transliteration_node_current->arr_p_sons[s_input_string[*p_i_current_read_offset]] != NULL
+    ){
+      p_transliteration_node_current = p_transliteration_node_current->arr_p_sons[s_input_string[*p_i_current_read_offset]];
+      ++(*p_i_current_read_offset);
+      if(p_transliteration_node_current->i_status < 0
+        || p_transliteration_node_current->i_status == I_STATUS__VALID
+      ){
+        p_transliteration_node_last_match = p_transliteration_node_current;
+        i_offset_since_last_prefix_match = 0;
+      }
+      else{
+        ++i_offset_since_last_prefix_match;
+      }
+    }
+
+    //Apply the match found if possible
+    //-Error case 1 : No prefix found
+    if(p_transliteration_node_last_match == NULL){
+      free(*p_s_output_string);
+      return I_ERROR__NO_PREFIX_FOUND;
+    }
+    //-Error case 2 : User error
+    if(p_transliteration_node_last_match->i_status < 0){
+      free(*p_s_output_string);
+      return p_transliteration_node_last_match->i_status;
+    }
+    //-Valid
+    *p_i_current_read_offset -= i_offset_since_last_prefix_match;
+    //--ignore match
+    if(p_transliteration_node_last_match->i_transliteration_size == 0){
+      continue; //nothing to do
+    }
+    //--concatenate transliteration
+    if(i_allocated_length_output_string == 0){
+      *p_s_output_string = (unsigned char *) calloc(8, sizeof(unsigned char));
+      if(*p_s_output_string == NULL){
+        return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+      }
+      i_allocated_length_output_string = 8;
+    }
+    i_new_allocated_length_output_string = i_allocated_length_output_string;
+    while(p_transliteration_node_last_match->i_transliteration_size > i_new_allocated_length_output_string - *p_i_size_output_string){
+      i_new_allocated_length_output_string = i_new_allocated_length_output_string << 1;//multiply by two
+      if(i_new_allocated_length_output_string <= i_allocated_length_output_string){
+        free(*p_s_output_string);
+        return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+      }
+    }
+    if(i_allocated_length_output_string < i_new_allocated_length_output_string){
+      i_size_for_realloc = i_new_allocated_length_output_string * sizeof(unsigned char);
+      p_for_realloc = realloc(*p_s_output_string, i_size_for_realloc);
+      if(p_for_realloc == NULL){
+        free(*p_s_output_string);
+        return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+      }
+      i_allocated_length_output_string = i_new_allocated_length_output_string;
+      *p_s_output_string = (unsigned char*) p_for_realloc;
+    }
+    memcpy(
+      &((*p_s_output_string)[*p_i_size_output_string]),
+      p_transliteration_node_last_match->s_transliteration,
+      p_transliteration_node_last_match->i_transliteration_size
+    );
+    *p_i_size_output_string += p_transliteration_node_last_match->i_transliteration_size;
+
+  }//end Outer Loop while(*p_i_current_read_offset < i_size_input_string)
+
+  return 0;
+}//end function transliteration_profile_iconv__raw()
+
+
+
+/**
+ * Transliteration profile use
+ *
+ */
+int transliteration_profile_iconv__shrink1(
+  t_transliteration_profile* p_transliteration_profile,
+  unsigned char* s_input_string,
+  size_t i_size_input_string,
+  unsigned char** p_s_output_string,
+  size_t* p_i_size_output_string,
+  size_t* p_i_current_read_offset
+){
+  size_t i_allocated_length_output_string = 0;
+  size_t i_new_allocated_length_output_string = 0;
+  size_t i_current_write_offset = 0;
+  size_t i_offset_since_last_prefix_match = 0;
+  t_transliteration_node* p_transliteration_node_root = NULL;
+  t_transliteration_node* p_transliteration_node_last_match = NULL;
+  t_transliteration_node* p_transliteration_node_current = NULL;
+  void* p_for_realloc = NULL;
+  size_t i_size_for_realloc = 0;
+
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_iconv__shrink1() %d %d %d %d %d %d\n",
+      p_transliteration_profile,
+      (long long int)s_input_string,
+      i_size_input_string,
+      p_s_output_string,
+      p_i_size_output_string,
+      p_i_current_read_offset
+  );
+  #endif
+
+  p_transliteration_node_root = p_transliteration_profile->p_root_node;
+  *p_s_output_string = NULL;
+  *p_i_size_output_string = 0;
+  *p_i_current_read_offset = 0;
+
+  //Outer loop : read and transliterate until end of input string
+  while(*p_i_current_read_offset < i_size_input_string){
+    p_transliteration_node_last_match = NULL;
+    p_transliteration_node_current = p_transliteration_node_root;
+    //Inner loop : read until no lengthier prefix is found
+    while(*p_i_current_read_offset < i_size_input_string
+      && p_transliteration_node_current->arr_p_sons != NULL
+      && p_transliteration_node_current->i_minimum_son <= s_input_string[*p_i_current_read_offset]
+      && p_transliteration_node_current->i_maximum_son >= s_input_string[*p_i_current_read_offset]
+      && p_transliteration_node_current->arr_p_sons[s_input_string[*p_i_current_read_offset] - p_transliteration_node_current->i_minimum_son] != NULL
+    ){
+      p_transliteration_node_current = p_transliteration_node_current->arr_p_sons[s_input_string[*p_i_current_read_offset] - p_transliteration_node_current->i_minimum_son];
+      ++(*p_i_current_read_offset);
+      if(p_transliteration_node_current->i_status < 0
+        || p_transliteration_node_current->i_status == I_STATUS__VALID
+      ){
+        p_transliteration_node_last_match = p_transliteration_node_current;
+        i_offset_since_last_prefix_match = 0;
+      }
+      else{
+        ++i_offset_since_last_prefix_match;
+      }
+    }
+
+    //Apply the match found if possible
+    //-Error case 1 : No prefix found
+    if(p_transliteration_node_last_match == NULL){
+      free(*p_s_output_string);
+      return I_ERROR__NO_PREFIX_FOUND;
+    }
+    //-Error case 2 : User error
+    if(p_transliteration_node_last_match->i_status < 0){
+      free(*p_s_output_string);
+      return p_transliteration_node_last_match->i_status;
+    }
+    //-Valid
+    *p_i_current_read_offset -= i_offset_since_last_prefix_match;
+    //--ignore match
+    if(p_transliteration_node_last_match->i_transliteration_size == 0){
+      continue; //nothing to do
+    }
+    //--concatenate transliteration
+    if(i_allocated_length_output_string == 0){
+      *p_s_output_string = (unsigned char *) calloc(8, sizeof(unsigned char));
+      if(*p_s_output_string == NULL){
+        return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+      }
+      i_allocated_length_output_string = 8;
+    }
+    i_new_allocated_length_output_string = i_allocated_length_output_string;
+    while(p_transliteration_node_last_match->i_transliteration_size > i_new_allocated_length_output_string - *p_i_size_output_string){
+      i_new_allocated_length_output_string = i_new_allocated_length_output_string << 1;//multiply by two
+      if(i_new_allocated_length_output_string <= i_allocated_length_output_string){
+        free(*p_s_output_string);
+        return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+      }
+    }
+    if(i_allocated_length_output_string < i_new_allocated_length_output_string){
+      i_size_for_realloc = i_new_allocated_length_output_string * sizeof(unsigned char);
+      p_for_realloc = realloc(*p_s_output_string, i_size_for_realloc);
+      if(p_for_realloc == NULL){
+        free(*p_s_output_string);
+        return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+      }
+      i_allocated_length_output_string = i_new_allocated_length_output_string;
+      *p_s_output_string = (unsigned char*) p_for_realloc;
+    }
+    memcpy(
+      &((*p_s_output_string)[*p_i_size_output_string]),
+      p_transliteration_node_last_match->s_transliteration,
+      p_transliteration_node_last_match->i_transliteration_size
+    );
+    *p_i_size_output_string += p_transliteration_node_last_match->i_transliteration_size;
+
+  }//end Outer Loop while(*p_i_current_read_offset < i_size_input_string)
+
+  return 0;
+}//end function transliteration_profile_iconv_shrink1()
 
 
 
