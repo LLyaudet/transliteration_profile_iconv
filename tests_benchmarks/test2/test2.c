@@ -122,7 +122,7 @@ int main(int argc, char *argv[]){
   unsigned char* s_output_string = NULL;
   size_t i_size_output_string;
   size_t i_current_read_offset;
-  
+
   do{
     printf("Loading test profile\n");
     i_result = transliteration_profile_load_from_text(
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]){
       );
       break;
     }
-   
+
     i_result = from_string_to_file(
         "result_raw.test_result",
         s_output_string,
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]){
       );
       break;
     }
-   
+
     i_result = from_string_to_file(
         "result_shrink1.test_result",
         s_output_string,
@@ -320,9 +320,6 @@ int main(int argc, char *argv[]){
     }
     printf("Error -12 was correctly thrown when transliterating (raw) second file\n");
 
-    free(s_output_string);
-    s_output_string = NULL;
-
     i_result = transliteration_profile_iconv(
         p_transliteration_profile_shrink1,
         s_input_string,
@@ -348,12 +345,20 @@ int main(int argc, char *argv[]){
   printf("Freeing everything\n");
   if(p_transliteration_profile_raw != NULL){
     transliteration_profile_free(p_transliteration_profile_raw);
+    p_transliteration_profile_raw = NULL;
   }
   if(p_transliteration_profile_shrink1 != NULL){
     transliteration_profile_free(p_transliteration_profile_shrink1);
+    p_transliteration_profile_shrink1 = NULL;
   }
-  free(s_input_string);
-  free(s_output_string);
+  if(s_input_string != NULL){
+    free(s_input_string);
+    s_input_string = NULL;
+  }
+  if(s_output_string != NULL){
+    free(s_output_string);
+    s_output_string = NULL;
+  }
   return i_result;
 }//end function main()
 

@@ -483,7 +483,10 @@ void transliteration_profile_free(t_transliteration_profile* p_transliteration_p
         p_transliteration_node
     );
     #endif
-    free(p_transliteration_node->s_transliteration);
+    if(p_transliteration_node->s_transliteration != NULL){
+      free(p_transliteration_node->s_transliteration);
+      p_transliteration_node->s_transliteration = NULL;
+    }
     return 0;
   }//end function free_node_prefix()
 
@@ -495,7 +498,10 @@ void transliteration_profile_free(t_transliteration_profile* p_transliteration_p
         free_node_postfix
     );
     #endif
-    free(p_transliteration_node->arr_p_sons);
+    if(p_transliteration_node->arr_p_sons != NULL){
+      free(p_transliteration_node->arr_p_sons);
+      p_transliteration_node->arr_p_sons = NULL;
+    }
     free(p_transliteration_node);
     return 0;
   }//end function free_node_postfix()
@@ -512,8 +518,14 @@ void transliteration_profile_free(t_transliteration_profile* p_transliteration_p
     case I_PROFILE_TYPE__SHRINK1:
       for(size_t i = 0; i < p_transliteration_profile->i_number_of_nodes; ++i){
         p_current_node = &(p_transliteration_profile->p_root_node[i]);
-        free(p_current_node->arr_p_sons);
-        free(p_current_node->s_transliteration);
+        if(p_current_node->arr_p_sons != NULL){
+          free(p_current_node->arr_p_sons);
+          p_current_node->arr_p_sons = NULL;
+        }
+        if(p_current_node->s_transliteration != NULL){
+          free(p_current_node->s_transliteration);
+          p_current_node->s_transliteration = NULL;
+        }
       }
       free(p_transliteration_profile->p_root_node);
     break;
