@@ -19,9 +19,7 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 
 //#define DEBUG_TRANSLITERATION_PROFILE
 
-#include <unistd.h>
-//#include <dirent.h>
-#include "../../transliteration_profile_iconv.c"
+#include "../test_functions.c"
 
 
 
@@ -54,41 +52,6 @@ __attribute__((noinline)) void foo(
       *p_i_current_line,
       *p_i_current_column
   );
-}
-
-
-
-int mydiff(char* s_filename1, char* s_filename2){
-  FILE* file1 = NULL;
-  FILE* file2 = NULL;
-  int i_result = 0;//no difference
-  int c1;//that's a char but getc returns an int
-  int c2;//that's a char but getc returns an int
-
-  file1 = fopen(s_filename1, "r");
-  if(file1 == NULL){
-    return I_ERROR__COULD_NOT_OPEN_FILE;
-  }
-
-  file2 = fopen(s_filename2, "r");
-  if(file2 == NULL){
-    fclose(file1);
-    return I_ERROR__COULD_NOT_OPEN_FILE;
-  }
-
-  do{
-    c1 = getc(file1);
-    c2 = getc(file2);
-    if(c1 != c2){
-      i_result = 1;
-      break;
-    }
-  }
-  while(c1 != EOF && c2 != EOF);
-
-  fclose(file1);
-  fclose(file2);
-  return i_result;
 }
 
 

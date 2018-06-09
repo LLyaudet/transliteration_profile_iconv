@@ -57,7 +57,8 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 #define I_ERROR__COULD_NOT_WRITE_CHARACTER 14
 #define I_ERROR__UNKNOWN_PROFILE_TYPE 15
 #define I_ERROR__WRONG_PROFILE_TYPE 16
-#define I_ERROR__INCOMPATIBLE_PROFILE_TYPES 17
+#define I_ERROR__UNKNOWN_READ_STATE 17
+#define I_ERROR__ROOT_NODE_SHOULD_HAVE_SKIP_STATUS_AND_NO_TRANSLITERATION 18
 //Negative error codes are user defined
 
 //Profile types
@@ -285,6 +286,30 @@ int transliteration_profile_iconv__shrink1(
   unsigned char** p_s_output_string,
   size_t* p_i_size_output_string,
   size_t* p_i_current_read_offset
+);
+
+
+
+/**
+ * Transliteration profile management
+ * Performs a mathematical composition of two transliteration profiles (maps, see README)
+ */
+int transliteration_profile_compose__raw(
+  t_transliteration_profile* p_transliteration_profile_1,
+  t_transliteration_profile* p_transliteration_profile_2,
+  t_transliteration_profile** p_p_transliteration_profile_result
+);
+
+
+
+/**
+ * Transliteration profile management
+ * Performs a mathematical composition of two transliteration profiles (maps, see README)
+ */
+int transliteration_profile_compose__shrink1(
+  t_transliteration_profile* p_transliteration_profile_1,
+  t_transliteration_profile* p_transliteration_profile_2,
+  t_transliteration_profile** p_p_transliteration_profile_result
 );
 
 

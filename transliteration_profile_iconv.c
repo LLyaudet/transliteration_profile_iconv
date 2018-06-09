@@ -350,6 +350,9 @@ int transliteration_profile_load_from_text(
           i_error_code = I_ERROR__LINE_RETURN_EXPECTED;
         }
       break;
+
+      default:
+        i_error_code = I_ERROR__UNKNOWN_READ_STATE;
     }//end switch(i_current_read_state)
     if(i_error_code != 0){
       break;
@@ -409,7 +412,24 @@ int transliteration_profile_compose(
       p_p_transliteration_profile_result
   );
   #endif
-  return I_ERROR__NOT_YET_CODED;
+  switch(p_transliteration_profile_1->i_profile_type){
+    case I_PROFILE_TYPE__RAW:
+    return transliteration_profile_compose__raw(
+        p_transliteration_profile_1,
+        p_transliteration_profile_2,
+        p_p_transliteration_profile_result
+    );
+
+    case I_PROFILE_TYPE__SHRINK1:
+    return transliteration_profile_compose__shrink1(
+        p_transliteration_profile_1,
+        p_transliteration_profile_2,
+        p_p_transliteration_profile_result
+    );
+
+    default:
+    return I_ERROR__UNKNOWN_PROFILE_TYPE;
+  }
 }//end function transliteration_profile_compose()
 
 
@@ -435,6 +455,9 @@ int transliteration_profile_dump_to_text(
 
     case I_PROFILE_TYPE__SHRINK1:
     return transliteration_profile_dump_to_text__shrink1(s_filename, p_transliteration_profile);
+
+    default:
+    return I_ERROR__UNKNOWN_PROFILE_TYPE;
   }
 }//end function transliteration_profile_dump_to_text()
 
@@ -745,8 +768,6 @@ int transliteration_profile_dump_to_text__raw(
   int* arr_prefix = NULL;
   t_transliteration_node** arr_p_ascendants = NULL;
   size_t i_current_depth = 0;
-  void* p_for_realloc = NULL;
-  size_t i_size_for_realloc = 0;
   t_transliteration_node* p_current_node;
   int i_error_code = 0;
 
@@ -884,6 +905,13 @@ int transliteration_profile_dump_to_text__shrink1(
   t_transliteration_profile* p_transliteration_profile
 ){
 
+  FILE* file = NULL;
+  int* arr_prefix = NULL;
+  t_transliteration_node** arr_p_ascendants = NULL;
+  size_t i_current_depth = 0;
+  t_transliteration_node* p_current_node;
+  int i_error_code = 0;
+
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
       "Call: transliteration_profile_dump_to_text__shrink1() %s %d\n",
@@ -892,7 +920,121 @@ int transliteration_profile_dump_to_text__shrink1(
   );
   #endif
 
-  return I_ERROR__NOT_YET_CODED;
+  file = fopen(s_filename, "w");
+  if(file == NULL){
+    return I_ERROR__COULD_NOT_OPEN_FILE;
+  }
+
+  arr_prefix = (int*) calloc(
+      p_transliteration_profile->i_max_depth + 1,//root node has depth 0
+      sizeof(int)
+  );
+  if(arr_prefix == NULL){
+    fclose(file);
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  arr_p_ascendants = (t_transliteration_node**) calloc(
+      p_transliteration_profile->i_max_depth + 1,//root node has depth 0
+      sizeof(t_transliteration_node*)
+  );
+  if(arr_p_ascendants == NULL){
+    fclose(file);
+    free(arr_prefix);
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  p_current_node = p_transliteration_profile->p_root_node;
+  arr_p_ascendants[0] = p_current_node;
+  arr_prefix[0] = 0;
+
+  while(p_current_node != NULL){
+    if(arr_prefix[i_current_depth] > p_current_node->i_maximum_son){
+      //we're done with the sons
+
+      if(i_current_depth == 0){
+        //we're done
+        break;
+      }
+
+      //we print a line for the current node if needed
+      if(p_current_node->i_status < 0
+        || p_current_node->i_status == I_STATUS__VALID
+      ){
+        //we print the prefix
+        for(size_t i = 0; i < i_current_depth; ++i){
+          if(fprintf(file, "%02x", arr_prefix[i]) < 0){
+            i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+            break;
+          }
+        }
+        if(i_error_code != 0){
+          break;
+        }
+
+        //we print a space
+        if(fputc(' ', file) == EOF){
+          i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+          break;
+        }
+
+        //we print the transliteration
+        if(p_current_node->i_status < 0){
+          if(fprintf(file, "%d", p_current_node->i_status) < 0){
+            i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+            break;
+          }
+        }
+        else{//if p_current_node->i_status == I_STATUS__VALID
+          if(p_current_node->i_transliteration_size == 0){
+            if(fputc('i', file) == EOF){
+              i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+              break;
+            }
+          }
+          else{
+            for(unsigned long i = 0; i < p_current_node->i_transliteration_size; ++i){
+              if(fprintf(file, "%02x", p_current_node->s_transliteration[i]) < 0){
+                i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+                break;
+              }
+            }
+            if(i_error_code != 0){
+              break;
+            }
+          }
+        }
+        if(fputc('\n', file) == EOF){
+          i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+          break;
+        }
+      }
+      //go back one level
+      --i_current_depth;
+      ++arr_prefix[i_current_depth];
+      p_current_node = arr_p_ascendants[i_current_depth];
+      continue;
+    }//end if(arr_prefix[i_current_depth] > p_current_node->i_maximum_son)
+
+    if(arr_prefix[i_current_depth] >= p_current_node->i_minimum_son
+      && p_current_node->arr_p_sons[arr_prefix[i_current_depth] - p_current_node->i_minimum_son] != NULL
+    ){
+      //go forward one level
+      p_current_node = p_current_node->arr_p_sons[arr_prefix[i_current_depth] - p_current_node->i_minimum_son];
+      ++i_current_depth;
+      arr_prefix[i_current_depth] = 0;
+      arr_p_ascendants[i_current_depth] = p_current_node;
+      continue;
+    }//end if(p_current_node->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
+
+    ++arr_prefix[i_current_depth];
+  }
+  while(0);
+
+  fclose(file);
+  free(arr_prefix);
+  free(arr_p_ascendants);
+  return i_error_code;
 }//end function transliteration_profile_dump_to_text__shrink1()
 
 
@@ -1001,24 +1143,15 @@ int transliteration_profile_from_raw_to_shrink1(
       p_current_node_shrink->arr_p_sons[i] = NULL;
     }
   }
-  //and its transliteration string
-  if(p_current_node_shrink->i_transliteration_size > 0){
-    p_current_node_shrink->s_transliteration = (unsigned char*) calloc(
-        p_current_node_shrink->i_transliteration_size,
-        sizeof(unsigned char)
-    );
-    if(p_current_node_shrink->s_transliteration == NULL){
-      free(arr_prefix);
-      free(arr_p_ascendants);
-      transliteration_profile_free(*p_p_transliteration_profile_to);
-      *p_p_transliteration_profile_to = NULL;
-      return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
-    }
-    memcpy(
-        p_current_node_shrink->s_transliteration,
-        p_current_node_raw->s_transliteration,
-        p_current_node_shrink->i_transliteration_size
-    );
+  //and we check that the root node is "skip"
+  if(p_current_node_shrink->i_transliteration_size > 0
+    || p_current_node_shrink->i_status != I_STATUS__SKIP
+  ){
+    free(arr_prefix);
+    free(arr_p_ascendants);
+    transliteration_profile_free(*p_p_transliteration_profile_to);
+    *p_p_transliteration_profile_to = NULL;
+    return I_ERROR__ROOT_NODE_SHOULD_HAVE_SKIP_STATUS_AND_NO_TRANSLITERATION;
   }
 
   arr_p_ascendants[0] = p_current_node_raw;
@@ -1172,12 +1305,20 @@ int transliteration_profile_iconv__raw(
     //Apply the match found if possible
     //-Error case 1 : No prefix found
     if(p_transliteration_node_last_match == NULL){
-      free(*p_s_output_string);
+      if(*p_s_output_string != NULL){
+        free(*p_s_output_string);
+        *p_s_output_string = NULL;
+        *p_i_size_output_string = 0;
+      }
       return I_ERROR__NO_PREFIX_FOUND;
     }
     //-Error case 2 : User error
     if(p_transliteration_node_last_match->i_status < 0){
-      free(*p_s_output_string);
+      if(*p_s_output_string != NULL){
+        free(*p_s_output_string);
+        *p_s_output_string = NULL;
+        *p_i_size_output_string = 0;
+      }
       return p_transliteration_node_last_match->i_status;
     }
     //-Valid
@@ -1199,6 +1340,8 @@ int transliteration_profile_iconv__raw(
       i_new_allocated_length_output_string = i_new_allocated_length_output_string << 1;//multiply by two
       if(i_new_allocated_length_output_string <= i_allocated_length_output_string){
         free(*p_s_output_string);
+        *p_s_output_string = NULL;
+        *p_i_size_output_string = 0;
         return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
       }
     }
@@ -1207,6 +1350,8 @@ int transliteration_profile_iconv__raw(
       p_for_realloc = realloc(*p_s_output_string, i_size_for_realloc);
       if(p_for_realloc == NULL){
         free(*p_s_output_string);
+        *p_s_output_string = NULL;
+        *p_i_size_output_string = 0;
         return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
       }
       i_allocated_length_output_string = i_new_allocated_length_output_string;
@@ -1292,12 +1437,20 @@ int transliteration_profile_iconv__shrink1(
     //Apply the match found if possible
     //-Error case 1 : No prefix found
     if(p_transliteration_node_last_match == NULL){
-      free(*p_s_output_string);
+      if(*p_s_output_string != NULL){
+        free(*p_s_output_string);
+        *p_s_output_string = NULL;
+        *p_i_size_output_string = 0;
+      }
       return I_ERROR__NO_PREFIX_FOUND;
     }
     //-Error case 2 : User error
     if(p_transliteration_node_last_match->i_status < 0){
-      free(*p_s_output_string);
+      if(*p_s_output_string != NULL){
+        free(*p_s_output_string);
+        *p_s_output_string = NULL;
+        *p_i_size_output_string = 0;
+      }
       return p_transliteration_node_last_match->i_status;
     }
     //-Valid
@@ -1319,6 +1472,8 @@ int transliteration_profile_iconv__shrink1(
       i_new_allocated_length_output_string = i_new_allocated_length_output_string << 1;//multiply by two
       if(i_new_allocated_length_output_string <= i_allocated_length_output_string){
         free(*p_s_output_string);
+        *p_s_output_string = NULL;
+        *p_i_size_output_string = 0;
         return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
       }
     }
@@ -1327,6 +1482,8 @@ int transliteration_profile_iconv__shrink1(
       p_for_realloc = realloc(*p_s_output_string, i_size_for_realloc);
       if(p_for_realloc == NULL){
         free(*p_s_output_string);
+        *p_s_output_string = NULL;
+        *p_i_size_output_string = 0;
         return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
       }
       i_allocated_length_output_string = i_new_allocated_length_output_string;
@@ -1343,6 +1500,430 @@ int transliteration_profile_iconv__shrink1(
 
   return 0;
 }//end function transliteration_profile_iconv_shrink1()
+
+
+
+/**
+ * Transliteration profile management
+ * Performs a mathematical composition of two transliteration profiles (maps, see README)
+ */
+int transliteration_profile_compose__raw(
+  t_transliteration_profile* p_transliteration_profile_1,
+  t_transliteration_profile* p_transliteration_profile_2,
+  t_transliteration_profile** p_p_transliteration_profile_result
+){
+
+  int* arr_prefix = NULL;
+  t_transliteration_node** arr_p_ascendants = NULL;
+  size_t i_current_depth = 0;
+  t_transliteration_node* p_root_node_result;
+  t_transliteration_node* p_current_node_1;
+  t_transliteration_node* p_current_node_result;
+  int i_number_of_sons = 0;
+  int i_result = 0;
+  size_t i_current_read_offset = 0;
+
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_compose__raw() %d %d %d\n",
+      p_transliteration_profile_1,
+      p_transliteration_profile_2,
+      p_p_transliteration_profile_result
+  );
+  #endif
+
+  if(p_transliteration_profile_1->i_profile_type != I_PROFILE_TYPE__RAW){
+    return I_ERROR__WRONG_PROFILE_TYPE;
+  }
+
+  arr_prefix = (int*) calloc(
+      p_transliteration_profile_1->i_max_depth + 1,//root node has depth 0
+      sizeof(int)
+  );
+  if(arr_prefix == NULL){
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  arr_p_ascendants = (t_transliteration_node**) calloc(
+      p_transliteration_profile_1->i_max_depth + 1,//root node has depth 0
+      sizeof(t_transliteration_node*)
+  );
+  if(arr_p_ascendants == NULL){
+    free(arr_prefix);
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  //first we allocate the transliteration profile
+  *p_p_transliteration_profile_result = (t_transliteration_profile*) calloc(1, sizeof(t_transliteration_profile));
+  if(*p_p_transliteration_profile_result == NULL){
+    free(arr_prefix);
+    free(arr_p_ascendants);
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+  (*p_p_transliteration_profile_result)->i_profile_type = I_PROFILE_TYPE__SHRINK1;
+  (*p_p_transliteration_profile_result)->i_number_of_nodes = p_transliteration_profile_1->i_number_of_nodes;
+  (*p_p_transliteration_profile_result)->i_max_depth = p_transliteration_profile_1->i_max_depth;
+  (*p_p_transliteration_profile_result)->p_root_node = NULL;
+
+  //and we allocate all the nodes
+  (*p_p_transliteration_profile_result)->p_root_node = (t_transliteration_node*) calloc(
+      p_transliteration_profile_1->i_number_of_nodes,
+      sizeof(t_transliteration_node)
+  );
+  if((*p_p_transliteration_profile_result)->p_root_node == NULL){
+    free(arr_prefix);
+    free(arr_p_ascendants);
+    free(*p_p_transliteration_profile_result);
+    *p_p_transliteration_profile_result = NULL;
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+  for(size_t i = 0; i < (*p_p_transliteration_profile_result)->i_number_of_nodes; ++i){
+    p_current_node_result = &((*p_p_transliteration_profile_result)->p_root_node[i]);
+    p_current_node_result->arr_p_sons = NULL;
+    p_current_node_result->s_transliteration = NULL;
+  }
+
+  p_current_node_1 = p_transliteration_profile_1->p_root_node;
+  p_root_node_result = (*p_p_transliteration_profile_result)->p_root_node;
+  p_current_node_result = p_root_node_result;
+
+  //We initialize the root node
+  p_current_node_result->i_node_index = p_current_node_1->i_node_index;
+  p_current_node_result->i_minimum_son = p_current_node_1->i_minimum_son;
+  p_current_node_result->i_maximum_son = p_current_node_1->i_maximum_son;
+  p_current_node_result->i_status = p_current_node_1->i_status;
+  p_current_node_result->i_transliteration_size = p_current_node_1->i_transliteration_size;
+  p_current_node_result->i_allocated_size = p_current_node_1->i_transliteration_size;//we don't need extra space
+  //with its array of sons
+  if(p_current_node_result->i_maximum_son >= p_current_node_result->i_minimum_son){
+    i_number_of_sons = p_current_node_result->i_maximum_son - p_current_node_result->i_minimum_son + 1;
+    p_current_node_result->arr_p_sons = (t_transliteration_node**) calloc(
+        i_number_of_sons,
+        sizeof(t_transliteration_node*)
+    );
+    if(p_current_node_result->arr_p_sons == NULL){
+      free(arr_prefix);
+      free(arr_p_ascendants);
+      transliteration_profile_free(*p_p_transliteration_profile_result);
+      *p_p_transliteration_profile_result = NULL;
+      return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+    }
+    for(int i = 0; i < i_number_of_sons; ++i){
+      p_current_node_result->arr_p_sons[i] = NULL;
+    }
+  }
+  //and we check that the root node is "skip"
+  if(p_current_node_result->i_transliteration_size > 0
+    || p_current_node_result->i_status != I_STATUS__SKIP
+  ){
+    free(arr_prefix);
+    free(arr_p_ascendants);
+    transliteration_profile_free(*p_p_transliteration_profile_result);
+    *p_p_transliteration_profile_result = NULL;
+    return I_ERROR__ROOT_NODE_SHOULD_HAVE_SKIP_STATUS_AND_NO_TRANSLITERATION;
+  }
+
+  arr_p_ascendants[0] = p_current_node_1;
+  arr_prefix[0] = 0;
+
+  while(p_current_node_1 != NULL){
+    if(arr_prefix[i_current_depth] > 255){
+      //we're done with the sons
+
+      if(i_current_depth == 0){
+        //we're done
+        break;
+      }
+
+      //go back one level
+      --i_current_depth;
+      ++arr_prefix[i_current_depth];
+      p_current_node_1 = arr_p_ascendants[i_current_depth];
+      p_current_node_result = &(p_root_node_result[p_current_node_1->i_node_index - 1]);
+      continue;
+    }//end if(arr_prefix[i_current_depth] > 255)
+
+    if(p_current_node_1->arr_p_sons[arr_prefix[i_current_depth]] != NULL){
+      //go forward one level
+      p_current_node_1 = p_current_node_1->arr_p_sons[arr_prefix[i_current_depth]];
+      p_current_node_result->arr_p_sons[
+          arr_prefix[i_current_depth] - p_current_node_result->i_minimum_son
+      ] = &(p_root_node_result[p_current_node_1->i_node_index - 1]);
+      p_current_node_result = &(p_root_node_result[p_current_node_1->i_node_index - 1]);
+      ++i_current_depth;
+      arr_prefix[i_current_depth] = 0;
+      arr_p_ascendants[i_current_depth] = p_current_node_1;
+
+      //we copy the node content
+      p_current_node_result->i_node_index = p_current_node_1->i_node_index;
+      p_current_node_result->i_minimum_son = p_current_node_1->i_minimum_son;
+      p_current_node_result->i_maximum_son = p_current_node_1->i_maximum_son;
+      p_current_node_result->i_status = p_current_node_1->i_status;
+      p_current_node_result->i_transliteration_size = p_current_node_1->i_transliteration_size;
+      p_current_node_result->i_allocated_size = p_current_node_1->i_transliteration_size;//we don't need extra space
+      //with its array of sons
+      if(p_current_node_result->i_maximum_son >= p_current_node_result->i_minimum_son){
+        i_number_of_sons = p_current_node_result->i_maximum_son - p_current_node_result->i_minimum_son + 1;
+        p_current_node_result->arr_p_sons = (t_transliteration_node**) calloc(
+            i_number_of_sons,
+            sizeof(t_transliteration_node*)
+        );
+        if(p_current_node_result->arr_p_sons == NULL){
+          free(arr_prefix);
+          free(arr_p_ascendants);
+          transliteration_profile_free(*p_p_transliteration_profile_result);
+          *p_p_transliteration_profile_result = NULL;
+          return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+        }
+        for(int i = 0; i < i_number_of_sons; ++i){
+          p_current_node_result->arr_p_sons[i] = NULL;
+        }
+      }
+      //and its transliteration string
+      if(p_current_node_1->i_transliteration_size > 0){
+        i_result = transliteration_profile_iconv(
+            p_transliteration_profile_2,
+            p_current_node_1->s_transliteration,
+            p_current_node_1->i_transliteration_size,
+            &p_current_node_result->s_transliteration,
+            &p_current_node_result->i_transliteration_size,
+            &i_current_read_offset
+        );
+        if(i_result > 0){
+          free(arr_prefix);
+          free(arr_p_ascendants);
+          transliteration_profile_free(*p_p_transliteration_profile_result);
+          *p_p_transliteration_profile_result = NULL;
+          return i_result;
+        }
+        //user defined errors are keeped in the composition profile
+        if(i_result < 0){
+          p_current_node_result->i_status = i_result;
+        }
+      }//end if(p_current_node_result->i_transliteration_size > 0)
+
+      continue;
+    }//end if(p_current_node_1->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
+
+    ++arr_prefix[i_current_depth];
+  }
+  while(0);
+
+  return 0;
+}//end function transliteration_profile_compose__raw()
+
+
+
+/**
+ * Transliteration profile management
+ * Performs a mathematical composition of two transliteration profiles (maps, see README)
+ */
+int transliteration_profile_compose__shrink1(
+  t_transliteration_profile* p_transliteration_profile_1,
+  t_transliteration_profile* p_transliteration_profile_2,
+  t_transliteration_profile** p_p_transliteration_profile_result
+){
+
+  int* arr_prefix = NULL;
+  t_transliteration_node** arr_p_ascendants = NULL;
+  size_t i_current_depth = 0;
+  t_transliteration_node* p_root_node_result;
+  t_transliteration_node* p_current_node_1;
+  t_transliteration_node* p_current_node_result;
+  int i_number_of_sons = 0;
+  int i_result = 0;
+  size_t i_current_read_offset = 0;
+
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_compose__shrink1() %d %d %d\n",
+      p_transliteration_profile_1,
+      p_transliteration_profile_2,
+      p_p_transliteration_profile_result
+  );
+  #endif
+
+  if(p_transliteration_profile_1->i_profile_type != I_PROFILE_TYPE__SHRINK1){
+    return I_ERROR__WRONG_PROFILE_TYPE;
+  }
+
+  arr_prefix = (int*) calloc(
+      p_transliteration_profile_1->i_max_depth + 1,//root node has depth 0
+      sizeof(int)
+  );
+  if(arr_prefix == NULL){
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  arr_p_ascendants = (t_transliteration_node**) calloc(
+      p_transliteration_profile_1->i_max_depth + 1,//root node has depth 0
+      sizeof(t_transliteration_node*)
+  );
+  if(arr_p_ascendants == NULL){
+    free(arr_prefix);
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  //first we allocate the transliteration profile
+  *p_p_transliteration_profile_result = (t_transliteration_profile*) calloc(1, sizeof(t_transliteration_profile));
+  if(*p_p_transliteration_profile_result == NULL){
+    free(arr_prefix);
+    free(arr_p_ascendants);
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+  (*p_p_transliteration_profile_result)->i_profile_type = I_PROFILE_TYPE__SHRINK1;
+  (*p_p_transliteration_profile_result)->i_number_of_nodes = p_transliteration_profile_1->i_number_of_nodes;
+  (*p_p_transliteration_profile_result)->i_max_depth = p_transliteration_profile_1->i_max_depth;
+  (*p_p_transliteration_profile_result)->p_root_node = NULL;
+
+  //and we allocate all the nodes
+  (*p_p_transliteration_profile_result)->p_root_node = (t_transliteration_node*) calloc(
+      p_transliteration_profile_1->i_number_of_nodes,
+      sizeof(t_transliteration_node)
+  );
+  if((*p_p_transliteration_profile_result)->p_root_node == NULL){
+    free(arr_prefix);
+    free(arr_p_ascendants);
+    free(*p_p_transliteration_profile_result);
+    *p_p_transliteration_profile_result = NULL;
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+  for(size_t i = 0; i < (*p_p_transliteration_profile_result)->i_number_of_nodes; ++i){
+    p_current_node_result = &((*p_p_transliteration_profile_result)->p_root_node[i]);
+    p_current_node_result->arr_p_sons = NULL;
+    p_current_node_result->s_transliteration = NULL;
+  }
+
+  p_current_node_1 = p_transliteration_profile_1->p_root_node;
+  i_number_of_sons = p_current_node_1->i_maximum_son - p_current_node_1->i_minimum_son + 1;//will be negative if needed
+  p_root_node_result = (*p_p_transliteration_profile_result)->p_root_node;
+  p_current_node_result = p_root_node_result;
+
+  //We initialize the root node
+  p_current_node_result->i_node_index = p_current_node_1->i_node_index;
+  p_current_node_result->i_minimum_son = p_current_node_1->i_minimum_son;
+  p_current_node_result->i_maximum_son = p_current_node_1->i_maximum_son;
+  p_current_node_result->i_status = p_current_node_1->i_status;
+  p_current_node_result->i_transliteration_size = p_current_node_1->i_transliteration_size;
+  p_current_node_result->i_allocated_size = p_current_node_1->i_transliteration_size;//we don't need extra space
+  //with its array of sons
+  if(i_number_of_sons >= 1){
+    p_current_node_result->arr_p_sons = (t_transliteration_node**) calloc(
+        i_number_of_sons,
+        sizeof(t_transliteration_node*)
+    );
+    if(p_current_node_result->arr_p_sons == NULL){
+      free(arr_prefix);
+      free(arr_p_ascendants);
+      transliteration_profile_free(*p_p_transliteration_profile_result);
+      *p_p_transliteration_profile_result = NULL;
+      return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+    }
+    for(int i = 0; i < i_number_of_sons; ++i){
+      p_current_node_result->arr_p_sons[i] = NULL;
+    }
+  }
+  //and we check that the root node is "skip"
+  if(p_current_node_result->i_transliteration_size > 0
+    || p_current_node_result->i_status != I_STATUS__SKIP
+  ){
+    free(arr_prefix);
+    free(arr_p_ascendants);
+    transliteration_profile_free(*p_p_transliteration_profile_result);
+    *p_p_transliteration_profile_result = NULL;
+    return I_ERROR__ROOT_NODE_SHOULD_HAVE_SKIP_STATUS_AND_NO_TRANSLITERATION;
+  }
+
+  arr_p_ascendants[0] = p_current_node_1;
+  arr_prefix[0] = 0;
+
+  while(p_current_node_1 != NULL){
+    if(arr_prefix[i_current_depth] >= i_number_of_sons){
+      //we're done with the sons
+
+      if(i_current_depth == 0){
+        //we're done
+        break;
+      }
+
+      //go back one level
+      --i_current_depth;
+      ++arr_prefix[i_current_depth];
+      p_current_node_1 = arr_p_ascendants[i_current_depth];
+      i_number_of_sons = p_current_node_1->i_maximum_son - p_current_node_1->i_minimum_son + 1;//will be negative if needed
+      p_current_node_result = &(p_root_node_result[p_current_node_1->i_node_index - 1]);
+      continue;
+    }//end if(arr_prefix[i_current_depth] > 255)
+
+    if(p_current_node_1->arr_p_sons[arr_prefix[i_current_depth]] != NULL){
+      //go forward one level
+      p_current_node_1 = p_current_node_1->arr_p_sons[arr_prefix[i_current_depth]];
+      i_number_of_sons = p_current_node_1->i_maximum_son - p_current_node_1->i_minimum_son + 1;//will be negative if needed
+      p_current_node_result->arr_p_sons[
+          arr_prefix[i_current_depth] - p_current_node_result->i_minimum_son
+      ] = &(p_root_node_result[p_current_node_1->i_node_index - 1]);
+      p_current_node_result = &(p_root_node_result[p_current_node_1->i_node_index - 1]);
+      ++i_current_depth;
+      arr_prefix[i_current_depth] = 0;
+      arr_p_ascendants[i_current_depth] = p_current_node_1;
+
+      //we copy the node content
+      p_current_node_result->i_node_index = p_current_node_1->i_node_index;
+      p_current_node_result->i_minimum_son = p_current_node_1->i_minimum_son;
+      p_current_node_result->i_maximum_son = p_current_node_1->i_maximum_son;
+      p_current_node_result->i_status = p_current_node_1->i_status;
+      p_current_node_result->i_transliteration_size = p_current_node_1->i_transliteration_size;
+      p_current_node_result->i_allocated_size = p_current_node_1->i_transliteration_size;//we don't need extra space
+      //with its array of sons
+      if(p_current_node_result->i_maximum_son >= p_current_node_result->i_minimum_son){
+        i_number_of_sons = p_current_node_result->i_maximum_son - p_current_node_result->i_minimum_son + 1;
+        p_current_node_result->arr_p_sons = (t_transliteration_node**) calloc(
+            i_number_of_sons,
+            sizeof(t_transliteration_node*)
+        );
+        if(p_current_node_result->arr_p_sons == NULL){
+          free(arr_prefix);
+          free(arr_p_ascendants);
+          transliteration_profile_free(*p_p_transliteration_profile_result);
+          *p_p_transliteration_profile_result = NULL;
+          return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+        }
+        for(int i = 0; i < i_number_of_sons; ++i){
+          p_current_node_result->arr_p_sons[i] = NULL;
+        }
+      }
+      //and its transliteration string
+      if(p_current_node_1->i_transliteration_size > 0){
+        i_result = transliteration_profile_iconv(
+            p_transliteration_profile_2,
+            p_current_node_1->s_transliteration,
+            p_current_node_1->i_transliteration_size,
+            &p_current_node_result->s_transliteration,
+            &p_current_node_result->i_transliteration_size,
+            &i_current_read_offset
+        );
+        if(i_result > 0){
+          free(arr_prefix);
+          free(arr_p_ascendants);
+          transliteration_profile_free(*p_p_transliteration_profile_result);
+          *p_p_transliteration_profile_result = NULL;
+          return i_result;
+        }
+        //user defined errors are keeped in the composition profile
+        if(i_result < 0){
+          p_current_node_result->i_status = i_result;
+        }
+      }//end if(p_current_node_result->i_transliteration_size > 0)
+
+      continue;
+    }//end if(p_current_node_1->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
+
+    ++arr_prefix[i_current_depth];
+  }
+  while(0);
+
+  return 0;
+}//end function transliteration_profile_compose__shrink1()
 
 
 

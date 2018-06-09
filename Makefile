@@ -16,7 +16,7 @@
 #©Copyright 2018 Laurent Lyaudet
 
 
-build-tests: build-test1 build-test2
+build-tests: build-test1 build-test2 build-test3
 
 build-test1:
 	gcc -W ./tests_benchmarks/test1/test1.c -o ./tests_benchmarks/test1/test1.exe
@@ -24,8 +24,13 @@ build-test1:
 build-test2:
 	gcc -W ./tests_benchmarks/test2/test2.c -o ./tests_benchmarks/test2/test2.exe
 
+build-test3:
+	gcc -W ./tests_benchmarks/test3/test3.c -o ./tests_benchmarks/test3/test3.exe
+
 clean:
 	rm -f ./tests_benchmarks/test1/*.exe
 	rm -f ./tests_benchmarks/test1/*.test_result
 	rm -f ./tests_benchmarks/test2/*.exe
 	rm -f ./tests_benchmarks/test2/*.test_result
+	rm -f ./tests_benchmarks/test3/*.exe
+	rm -f ./tests_benchmarks/test3/*.test_result
