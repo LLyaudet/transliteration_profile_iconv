@@ -16,6 +16,12 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 
 ©Copyright 2018 Laurent Lyaudet
 */
+/*
+Explanations of this test:
+This test loads one profile from ISO-8859-1 to UTF-8 and another profile from UTF-8 to ISO-8859-15.
+Then it composes these two profiles to obtain a third profile from ISO-8859-1 to ISO-8859-15.
+The third profile is dumped to text and compared to the reference profile from ISO-8859-1 to ISO-8859-15.
+*/
 
 //#define DEBUG_TRANSLITERATION_PROFILE
 

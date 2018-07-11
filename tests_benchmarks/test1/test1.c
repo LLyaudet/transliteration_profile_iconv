@@ -16,6 +16,12 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 
 ©Copyright 2018 Laurent Lyaudet
 */
+/*
+Explanations for this test:
+tp_test_load.txt is a transliteration profile file that contains various cases of transliterations.
+This test loads this profile in a tree structure in memory and dumps a copy of it from the tree structure.
+It then checks that the copy is identical to the original.
+*/
 
 //#define DEBUG_TRANSLITERATION_PROFILE
 

@@ -16,6 +16,18 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 
 ©Copyright 2018 Laurent Lyaudet
 */
+/*
+Explanations for this test:
+tp_test_iconv.txt is a transliteration profile file where:
+ - A is doubled (41 4141),
+ - B is ignored (42 i),
+ - C returns an error (43 -12)
+ - line returns are kept (0a 0a)
+to_convert.txt contains a string that must be transliterated with success.
+AABAA -> AAAAAAAA that you can found in expected_result.txt
+to_error.txt contains a string AACAA that must return -12 according to the profile.
+Both tests are performed with "raw" and "shrink1" tree structures representing the profile.
+*/
 
 //#define DEBUG_TRANSLITERATION_PROFILE
 
