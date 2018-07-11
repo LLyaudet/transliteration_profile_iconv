@@ -19,7 +19,8 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 /*
 Explanations for this test:
 tp_test_load.txt is a transliteration profile file that contains various cases of transliterations.
-This test loads this profile in a tree structure in memory and dumps a copy of it from the tree structure.
+This test loads this profile in a tree structure in memory and dumps a binary version of it from the tree structure.
+Then the binary version is loaded again into a tree structure and this structure is dumped to a text copy of the original profile.
 It then checks that the copy is identical to the original.
 */
 
@@ -29,49 +30,15 @@ It then checks that the copy is identical to the original.
 
 
 
-__attribute__((noinline)) void foo(
-  char* s_filename,
-  t_transliteration_profile** p_p_transliteration_profile,
-  size_t* p_i_current_line,
-  size_t* p_i_current_column
-){
-  printf(
-      "%s %d %d %d %d %d %d\n",
-      s_filename,
-      p_p_transliteration_profile,
-      p_i_current_line,
-      p_i_current_column,
-      *p_p_transliteration_profile,
-      *p_i_current_line,
-      *p_i_current_column
-  );
-  ++(*p_p_transliteration_profile);
-  ++(*p_i_current_line);
-  ++(*p_i_current_column);
-  printf(
-      "%s %d %d %d %d %d %d\n",
-      s_filename,
-      p_p_transliteration_profile,
-      p_i_current_line,
-      p_i_current_column,
-      *p_p_transliteration_profile,
-      *p_i_current_line,
-      *p_i_current_column
-  );
-}
-
-
-
 int main(int argc, char *argv[]){
 
   int i_result = 0;
   t_transliteration_profile* p_transliteration_profile = NULL;
   size_t i_current_line = 0;
   size_t i_current_column = 0;
+  size_t i_current_offset = 0;
 
-  foo("tp_test_load.txt", &p_transliteration_profile, &i_current_line, &i_current_column);
-
-  printf("Loading test profile\n");
+  printf("Loading test profile from text\n");
   i_result = transliteration_profile_load_from_text(
       "tp_test_load.txt",
       &p_transliteration_profile,
@@ -90,7 +57,40 @@ int main(int argc, char *argv[]){
   }
 
   do{
-    printf("Dumping test profile\n");
+    printf("Dumping test profile to bin\n");
+    i_result = transliteration_profile_dump_to_bin(
+        "tp_test_load_bin.test_result",
+        p_transliteration_profile
+    );
+
+    if(i_result != 0){
+      printf(
+          "An error occured when dumping the profile to bin (error code %d).\n",
+          i_result
+      );
+      break;
+    }
+
+    printf("Freeing first test profile\n");
+    transliteration_profile_free(p_transliteration_profile);
+  
+    printf("Loading test profile from bin\n");
+    i_result = transliteration_profile_load_from_bin(
+        "tp_test_load_bin.test_result",
+        &p_transliteration_profile,
+        &i_current_offset
+    );
+
+    if(i_result != 0){
+      printf(
+          "An error occured when loading profile from bin at offset %d (error code %d).\n",
+          i_current_offset,
+          i_result
+      );
+      return i_result;
+    }
+
+    printf("Dumping test profile to text\n");
     i_result = transliteration_profile_dump_to_text(
         "tp_test_dump.test_result",
         p_transliteration_profile
@@ -104,8 +104,6 @@ int main(int argc, char *argv[]){
 
       break;
     }
-
-
     //test if both files are equal
     i_result = mydiff("tp_test_load.txt", "tp_test_dump.test_result");
 
@@ -121,8 +119,10 @@ int main(int argc, char *argv[]){
   }
   while(0);
 
-  printf("Freeing test profile\n");
-  transliteration_profile_free(p_transliteration_profile);
+  if(p_transliteration_profile != NULL){
+    printf("Freeing test profile\n");
+    transliteration_profile_free(p_transliteration_profile);
+  }
 
   return i_result;
 }//end function main()
