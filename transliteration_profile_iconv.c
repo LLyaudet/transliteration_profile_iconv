@@ -82,7 +82,7 @@ int transliteration_profile_load_from_text(
   p_current_node = p_root_node;
   ++((*p_p_transliteration_profile)->i_number_of_nodes);
   p_current_node->i_node_index = (*p_p_transliteration_profile)->i_number_of_nodes;
-  p_current_node->i_minimum_son = 255;
+  p_current_node->i_minimum_son = I_MAXIMUM_SON;
   p_current_node->i_maximum_son = 0;
   p_current_node->arr_p_sons = NULL;
   p_current_node->i_status = I_STATUS__SKIP;
@@ -90,13 +90,13 @@ int transliteration_profile_load_from_text(
   p_current_node->i_allocated_size = 0;
   p_current_node->s_transliteration = NULL;
   //with its array of sons
-  p_current_node->arr_p_sons = (t_transliteration_node**) calloc(256, sizeof(t_transliteration_node*));
+  p_current_node->arr_p_sons = (t_transliteration_node**) calloc(I_MAXIMUM_SON + 1, sizeof(t_transliteration_node*));
   if(p_current_node->arr_p_sons == NULL){
     transliteration_profile_free(*p_p_transliteration_profile);
     *p_p_transliteration_profile = NULL;
     return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
   }
-  for(int i = 0; i < 256; ++i){
+  for(int i = 0; i <= I_MAXIMUM_SON; ++i){
     p_current_node->arr_p_sons[i] = NULL;
   }
 
@@ -169,7 +169,7 @@ int transliteration_profile_load_from_text(
             }
             ++((*p_p_transliteration_profile)->i_number_of_nodes);
             p_new_node->i_node_index = (*p_p_transliteration_profile)->i_number_of_nodes;
-            p_new_node->i_minimum_son = 255;
+            p_new_node->i_minimum_son = I_MAXIMUM_SON;
             p_new_node->i_maximum_son = 0;
             p_new_node->arr_p_sons = NULL;
             p_new_node->i_status = I_STATUS__SKIP;
@@ -177,12 +177,12 @@ int transliteration_profile_load_from_text(
             p_new_node->i_allocated_size = 0;
             p_new_node->s_transliteration = NULL;
             //with its array of sons
-            p_new_node->arr_p_sons = (t_transliteration_node**) calloc(256, sizeof(t_transliteration_node*));
+            p_new_node->arr_p_sons = (t_transliteration_node**) calloc(I_MAXIMUM_SON + 1, sizeof(t_transliteration_node*));
             if(p_new_node->arr_p_sons == NULL){
               i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
               break;
             }
-            for(int i = 0; i < 256; ++i){
+            for(int i = 0; i <= I_MAXIMUM_SON; ++i){
               p_new_node->arr_p_sons[i] = NULL;
             }
             p_current_node->arr_p_sons[i_current_octet] = p_new_node;
@@ -195,7 +195,7 @@ int transliteration_profile_load_from_text(
             if((*p_i_current_column / 2) > (*p_p_transliteration_profile)->i_max_depth){
               (*p_p_transliteration_profile)->i_max_depth = *p_i_current_column / 2;
             }
-          }
+          }//end if(p_current_node->arr_p_sons[i_current_octet] == NULL)
           p_current_node = p_current_node->arr_p_sons[i_current_octet];
         }
         else{
@@ -689,7 +689,7 @@ int transliteration_profile_traversal__raw_node(
   }
 
   if(p_transliteration_node->arr_p_sons != NULL){
-    for(int i = 0; i < 256; ++i){
+    for(int i = 0; i <= I_MAXIMUM_SON; ++i){
       if(p_transliteration_node->arr_p_sons[i] != NULL){
         i_result = transliteration_profile_traversal__raw_node(
             p_transliteration_node->arr_p_sons[i],
@@ -779,146 +779,9 @@ int transliteration_profile_dump_to_text__raw(
   );
   #endif
 
-  file = fopen(s_filename, "w");
-  if(file == NULL){
-    return I_ERROR__COULD_NOT_OPEN_FILE;
+  if(p_transliteration_profile->i_profile_type != I_PROFILE_TYPE__RAW){
+    return I_ERROR__WRONG_PROFILE_TYPE;
   }
-
-  arr_prefix = (int*) calloc(
-      p_transliteration_profile->i_max_depth + 1,//root node has depth 0
-      sizeof(int)
-  );
-  if(arr_prefix == NULL){
-    fclose(file);
-    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
-  }
-
-  arr_p_ascendants = (t_transliteration_node**) calloc(
-      p_transliteration_profile->i_max_depth + 1,//root node has depth 0
-      sizeof(t_transliteration_node*)
-  );
-  if(arr_p_ascendants == NULL){
-    fclose(file);
-    free(arr_prefix);
-    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
-  }
-
-  p_current_node = p_transliteration_profile->p_root_node;
-  arr_p_ascendants[0] = p_current_node;
-  arr_prefix[0] = 0;
-
-  while(p_current_node != NULL){
-    if(arr_prefix[i_current_depth] > 255){
-      //we're done with the sons
-
-      if(i_current_depth == 0){
-        //we're done
-        break;
-      }
-
-      //we print a line for the current node if needed
-      if(p_current_node->i_status < 0
-        || p_current_node->i_status == I_STATUS__VALID
-      ){
-        //we print the prefix
-        for(size_t i = 0; i < i_current_depth; ++i){
-          if(fprintf(file, "%02x", arr_prefix[i]) < 0){
-            i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
-            break;
-          }
-        }
-        if(i_error_code != 0){
-          break;
-        }
-
-        //we print a space
-        if(fputc(' ', file) == EOF){
-          i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
-          break;
-        }
-
-        //we print the transliteration
-        if(p_current_node->i_status < 0){
-          if(fprintf(file, "%d", p_current_node->i_status) < 0){
-            i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
-            break;
-          }
-        }
-        else{//if p_current_node->i_status == I_STATUS__VALID
-          if(p_current_node->i_transliteration_size == 0){
-            if(fputc('i', file) == EOF){
-              i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
-              break;
-            }
-          }
-          else{
-            for(unsigned long i = 0; i < p_current_node->i_transliteration_size; ++i){
-              if(fprintf(file, "%02x", p_current_node->s_transliteration[i]) < 0){
-                i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
-                break;
-              }
-            }
-            if(i_error_code != 0){
-              break;
-            }
-          }
-        }
-        if(fputc('\n', file) == EOF){
-          i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
-          break;
-        }
-      }
-      //go back one level
-      --i_current_depth;
-      ++arr_prefix[i_current_depth];
-      p_current_node = arr_p_ascendants[i_current_depth];
-      continue;
-    }//end if(arr_prefix[i_current_depth] > 255)
-
-    if(p_current_node->arr_p_sons[arr_prefix[i_current_depth]] != NULL){
-      //go forward one level
-      p_current_node = p_current_node->arr_p_sons[arr_prefix[i_current_depth]];
-      ++i_current_depth;
-      arr_prefix[i_current_depth] = 0;
-      arr_p_ascendants[i_current_depth] = p_current_node;
-      continue;
-    }//end if(p_current_node->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
-
-    ++arr_prefix[i_current_depth];
-  }
-  while(0);
-
-  fclose(file);
-  free(arr_prefix);
-  free(arr_p_ascendants);
-  return i_error_code;
-}//end function transliteration_profile_dump_to_text__raw()
-
-
-
-/**
- * Transliteration profile management
- * Dump a shrinked transliteration profile to a text file (shrink1)
- */
-int transliteration_profile_dump_to_text__shrink1(
-  char* s_filename,
-  t_transliteration_profile* p_transliteration_profile
-){
-
-  FILE* file = NULL;
-  int* arr_prefix = NULL;
-  t_transliteration_node** arr_p_ascendants = NULL;
-  size_t i_current_depth = 0;
-  t_transliteration_node* p_current_node;
-  int i_error_code = 0;
-
-  #ifdef DEBUG_TRANSLITERATION_PROFILE
-  printf(
-      "Call: transliteration_profile_dump_to_text__shrink1() %s %d\n",
-      s_filename,
-      p_transliteration_profile
-  );
-  #endif
 
   file = fopen(s_filename, "w");
   if(file == NULL){
@@ -978,13 +841,159 @@ int transliteration_profile_dump_to_text__shrink1(
           break;
         }
 
-        //we print the transliteration
+        //we print the error code
         if(p_current_node->i_status < 0){
           if(fprintf(file, "%d", p_current_node->i_status) < 0){
             i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
             break;
           }
         }
+        //or the transliteration
+        else{//if p_current_node->i_status == I_STATUS__VALID
+          if(p_current_node->i_transliteration_size == 0){
+            if(fputc('i', file) == EOF){
+              i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+              break;
+            }
+          }
+          else{
+            for(unsigned long i = 0; i < p_current_node->i_transliteration_size; ++i){
+              if(fprintf(file, "%02x", p_current_node->s_transliteration[i]) < 0){
+                i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+                break;
+              }
+            }
+            if(i_error_code != 0){
+              break;
+            }
+          }
+        }
+        if(fputc('\n', file) == EOF){
+          i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+          break;
+        }
+      }
+      //go back one level
+      --i_current_depth;
+      ++arr_prefix[i_current_depth];
+      p_current_node = arr_p_ascendants[i_current_depth];
+      continue;
+    }//end if(arr_prefix[i_current_depth] > p_current_node->i_maximum_son)
+
+    if(p_current_node->arr_p_sons[arr_prefix[i_current_depth]] != NULL){
+      //go forward one level
+      p_current_node = p_current_node->arr_p_sons[arr_prefix[i_current_depth]];
+      ++i_current_depth;
+      arr_prefix[i_current_depth] = 0;
+      arr_p_ascendants[i_current_depth] = p_current_node;
+      continue;
+    }//end if(p_current_node->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
+
+    ++arr_prefix[i_current_depth];
+  }//end while(p_current_node != NULL)
+
+  fclose(file);
+  free(arr_prefix);
+  free(arr_p_ascendants);
+  return i_error_code;
+}//end function transliteration_profile_dump_to_text__raw()
+
+
+
+/**
+ * Transliteration profile management
+ * Dump a shrinked transliteration profile to a text file (shrink1)
+ */
+int transliteration_profile_dump_to_text__shrink1(
+  char* s_filename,
+  t_transliteration_profile* p_transliteration_profile
+){
+
+  FILE* file = NULL;
+  int* arr_prefix = NULL;
+  t_transliteration_node** arr_p_ascendants = NULL;
+  size_t i_current_depth = 0;
+  t_transliteration_node* p_current_node;
+  int i_error_code = 0;
+
+  #ifdef DEBUG_TRANSLITERATION_PROFILE
+  printf(
+      "Call: transliteration_profile_dump_to_text__shrink1() %s %d\n",
+      s_filename,
+      p_transliteration_profile
+  );
+  #endif
+
+  if(p_transliteration_profile->i_profile_type != I_PROFILE_TYPE__SHRINK1){
+    return I_ERROR__WRONG_PROFILE_TYPE;
+  }
+
+  file = fopen(s_filename, "w");
+  if(file == NULL){
+    return I_ERROR__COULD_NOT_OPEN_FILE;
+  }
+
+  arr_prefix = (int*) calloc(
+      p_transliteration_profile->i_max_depth + 1,//root node has depth 0
+      sizeof(int)
+  );
+  if(arr_prefix == NULL){
+    fclose(file);
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  arr_p_ascendants = (t_transliteration_node**) calloc(
+      p_transliteration_profile->i_max_depth + 1,//root node has depth 0
+      sizeof(t_transliteration_node*)
+  );
+  if(arr_p_ascendants == NULL){
+    fclose(file);
+    free(arr_prefix);
+    return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+  }
+
+  p_current_node = p_transliteration_profile->p_root_node;
+  arr_p_ascendants[0] = p_current_node;
+  arr_prefix[0] = 0;
+
+  while(p_current_node != NULL){
+    if(arr_prefix[i_current_depth] > p_current_node->i_maximum_son){
+      //we're done with the sons
+
+      if(i_current_depth == 0){
+        //we're done
+        break;
+      }
+
+      //we print a line for the current node if needed
+      if(p_current_node->i_status < 0
+        || p_current_node->i_status == I_STATUS__VALID
+      ){
+        //we print the prefix
+        for(size_t i = 0; i < i_current_depth; ++i){
+          if(fprintf(file, "%02x", arr_prefix[i]) < 0){
+            i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+            break;
+          }
+        }
+        if(i_error_code != 0){
+          break;
+        }
+
+        //we print a space
+        if(fputc(' ', file) == EOF){
+          i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+          break;
+        }
+
+        //we print the error code
+        if(p_current_node->i_status < 0){
+          if(fprintf(file, "%d", p_current_node->i_status) < 0){
+            i_error_code = I_ERROR__COULD_NOT_WRITE_CHARACTER;
+            break;
+          }
+        }
+        //or the transliteration
         else{//if p_current_node->i_status == I_STATUS__VALID
           if(p_current_node->i_transliteration_size == 0){
             if(fputc('i', file) == EOF){
@@ -1028,8 +1037,7 @@ int transliteration_profile_dump_to_text__shrink1(
     }//end if(p_current_node->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
 
     ++arr_prefix[i_current_depth];
-  }
-  while(0);
+  }//end while(p_current_node != NULL)
 
   fclose(file);
   free(arr_prefix);
@@ -1158,7 +1166,7 @@ int transliteration_profile_from_raw_to_shrink1(
   arr_prefix[0] = 0;
 
   while(p_current_node_raw != NULL){
-    if(arr_prefix[i_current_depth] > 255){
+    if(arr_prefix[i_current_depth] > p_current_node_raw->i_maximum_son){
       //we're done with the sons
 
       if(i_current_depth == 0){
@@ -1172,7 +1180,7 @@ int transliteration_profile_from_raw_to_shrink1(
       p_current_node_raw = arr_p_ascendants[i_current_depth];
       p_current_node_shrink = &(p_root_node_shrink[p_current_node_raw->i_node_index - 1]);
       continue;
-    }//end if(arr_prefix[i_current_depth] > 255)
+    }//end if(arr_prefix[i_current_depth] > p_current_node_raw->i_maximum_son)
 
     if(p_current_node_raw->arr_p_sons[arr_prefix[i_current_depth]] != NULL){
       //go forward one level
@@ -1234,8 +1242,7 @@ int transliteration_profile_from_raw_to_shrink1(
     }//end if(p_current_node_raw->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
 
     ++arr_prefix[i_current_depth];
-  }
-  while(0);
+  }//while(p_current_node_raw != NULL)
 
   return 0;
 }//end function transliteration_profile_from_raw_to_shrink1()
@@ -1280,6 +1287,10 @@ int transliteration_profile_iconv__raw(
   *p_s_output_string = NULL;
   *p_i_size_output_string = 0;
   *p_i_current_read_offset = 0;
+
+  if(p_transliteration_profile->i_profile_type != I_PROFILE_TYPE__RAW){
+    return I_ERROR__WRONG_PROFILE_TYPE;
+  }
 
   //Outer loop : read and transliterate until end of input string
   while(*p_i_current_read_offset < i_size_input_string){
@@ -1409,6 +1420,10 @@ int transliteration_profile_iconv__shrink1(
   *p_s_output_string = NULL;
   *p_i_size_output_string = 0;
   *p_i_current_read_offset = 0;
+
+  if(p_transliteration_profile->i_profile_type != I_PROFILE_TYPE__SHRINK1){
+    return I_ERROR__WRONG_PROFILE_TYPE;
+  }
 
   //Outer loop : read and transliterate until end of input string
   while(*p_i_current_read_offset < i_size_input_string){
@@ -1627,7 +1642,7 @@ int transliteration_profile_compose__raw(
   arr_prefix[0] = 0;
 
   while(p_current_node_1 != NULL){
-    if(arr_prefix[i_current_depth] > 255){
+    if(arr_prefix[i_current_depth] > p_current_node_1->i_maximum_son){
       //we're done with the sons
 
       if(i_current_depth == 0){
@@ -1641,7 +1656,7 @@ int transliteration_profile_compose__raw(
       p_current_node_1 = arr_p_ascendants[i_current_depth];
       p_current_node_result = &(p_root_node_result[p_current_node_1->i_node_index - 1]);
       continue;
-    }//end if(arr_prefix[i_current_depth] > 255)
+    }//end if(arr_prefix[i_current_depth] > p_current_node_1->i_maximum_son)
 
     if(p_current_node_1->arr_p_sons[arr_prefix[i_current_depth]] != NULL){
       //go forward one level
@@ -1659,8 +1674,8 @@ int transliteration_profile_compose__raw(
       p_current_node_result->i_minimum_son = p_current_node_1->i_minimum_son;
       p_current_node_result->i_maximum_son = p_current_node_1->i_maximum_son;
       p_current_node_result->i_status = p_current_node_1->i_status;
-      p_current_node_result->i_transliteration_size = p_current_node_1->i_transliteration_size;
-      p_current_node_result->i_allocated_size = p_current_node_1->i_transliteration_size;//we don't need extra space
+      p_current_node_result->i_transliteration_size = 0;//iconv below may change this value
+      p_current_node_result->i_allocated_size = 0;//it will be updated accordingly
       //with its array of sons
       if(p_current_node_result->i_maximum_son >= p_current_node_result->i_minimum_son){
         i_number_of_sons = p_current_node_result->i_maximum_son - p_current_node_result->i_minimum_son + 1;
@@ -1696,6 +1711,7 @@ int transliteration_profile_compose__raw(
           *p_p_transliteration_profile_result = NULL;
           return i_result;
         }
+        p_current_node_result->i_allocated_size = p_current_node_result->i_transliteration_size;
         //user defined errors are keeped in the composition profile
         if(i_result < 0){
           p_current_node_result->i_status = i_result;
@@ -1706,8 +1722,7 @@ int transliteration_profile_compose__raw(
     }//end if(p_current_node_1->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
 
     ++arr_prefix[i_current_depth];
-  }
-  while(0);
+  }//end while(p_current_node_1 != NULL)
 
   return 0;
 }//end function transliteration_profile_compose__raw()
@@ -1853,7 +1868,7 @@ int transliteration_profile_compose__shrink1(
       i_number_of_sons = p_current_node_1->i_maximum_son - p_current_node_1->i_minimum_son + 1;//will be negative if needed
       p_current_node_result = &(p_root_node_result[p_current_node_1->i_node_index - 1]);
       continue;
-    }//end if(arr_prefix[i_current_depth] > 255)
+    }//end if(arr_prefix[i_current_depth] >= i_number_of_sons)
 
     if(p_current_node_1->arr_p_sons[arr_prefix[i_current_depth]] != NULL){
       //go forward one level
@@ -1872,11 +1887,10 @@ int transliteration_profile_compose__shrink1(
       p_current_node_result->i_minimum_son = p_current_node_1->i_minimum_son;
       p_current_node_result->i_maximum_son = p_current_node_1->i_maximum_son;
       p_current_node_result->i_status = p_current_node_1->i_status;
-      p_current_node_result->i_transliteration_size = p_current_node_1->i_transliteration_size;
-      p_current_node_result->i_allocated_size = p_current_node_1->i_transliteration_size;//we don't need extra space
+      p_current_node_result->i_transliteration_size = 0;//iconv below may change this value
+      p_current_node_result->i_allocated_size = 0;//it will be updated accordingly
       //with its array of sons
-      if(p_current_node_result->i_maximum_son >= p_current_node_result->i_minimum_son){
-        i_number_of_sons = p_current_node_result->i_maximum_son - p_current_node_result->i_minimum_son + 1;
+      if(i_number_of_sons >= 1){
         p_current_node_result->arr_p_sons = (t_transliteration_node**) calloc(
             i_number_of_sons,
             sizeof(t_transliteration_node*)
@@ -1909,6 +1923,7 @@ int transliteration_profile_compose__shrink1(
           *p_p_transliteration_profile_result = NULL;
           return i_result;
         }
+        p_current_node_result->i_allocated_size = p_current_node_result->i_transliteration_size;
         //user defined errors are keeped in the composition profile
         if(i_result < 0){
           p_current_node_result->i_status = i_result;
@@ -1919,8 +1934,7 @@ int transliteration_profile_compose__shrink1(
     }//end if(p_current_node_1->arr_p_sons[arr_prefix[i_current_depth]] != NULL)
 
     ++arr_prefix[i_current_depth];
-  }
-  while(0);
+  }//end while(p_current_node_1 != NULL)
 
   return 0;
 }//end function transliteration_profile_compose__shrink1()

@@ -15,6 +15,8 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 
 ©Copyright 2018 Laurent Lyaudet
 
+This file comes with the version 1.0.0 of transliteration_profile_iconv.
+
 ----------------------------------------------------------------------------
 Preamble
 ----------------------------------------------------------------------------
@@ -39,7 +41,7 @@ Idea behind transliteration_profile_iconv
 ----------------------------------------------------------------------------
 When you convert character strings from one encoding to another encoding,
 you converts code points of the input encoding to code points of the output encoding;
-and optionnaly with iconv you can also transliterate code points from the input encoding
+and optionally with iconv you can also transliterate code points from the input encoding
 that don't have a matching code point in the output encoding.
 In this context, transliterate means tranlating the code point of the input encoding with
 a sequence of code points in the output encoding.
@@ -59,6 +61,9 @@ from a tuple of octets to another tuple of octets.
 Hence, transliteration_profile_iconv defines a "transliteration profile"
 as a mathematical function that maps an element of a set of tuples of octets
 to an element of another set of tuples of octets.
+(It maps a tuple of octets to another tuple of octets,
+but don't forget that not all tuples, even of some small fixed/bounded length,
+are required to be in the domain of the mapping).
 The lengths of the tuples are assumed to be small
 (but the limit is the memory of the computer and/or limits given by the OS).
 We have the following additional assumption that no input tuple is a prefix of another input tuple.
@@ -66,7 +71,7 @@ From this assumption, for any input string $s and any starting position $i insid
 let us denote cdr($s, $i) the substring of $s from position $i to the end of $s:
 - either there is a prefix of cdr($s, $i) that is equal to one of the input tuples of the transliteration profile,
   in which case this prefix/tuple is unique,
-- or there is no such prefix (and the library will stop and return error code 1).
+- or there is no such prefix (and the main function of this library will stop and return error code 1).
 From this rule, the algorithm is trivial :
   - $i = 0
   - loop) find prefix in cdr($s, $i)

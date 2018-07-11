@@ -58,7 +58,7 @@ try{
   elseif(ctype_xdigit($sDefaultValue)){
     $iLength = strlen($sDefaultValue);
     if($iLength % 2 === 1){
-      throw new Exception('The default value must have a *pair* number of hexadecimal digits.');
+      throw new Exception('The default value must have an *even* number of hexadecimal digits.');
     }
     if($iLength > I_MAXIMUM_LENGTH_OF_TRANSLITERATION_PER_CHARACTER*2){
       throw new Exception(sprintf(
@@ -134,7 +134,7 @@ catch(Exception $oException){
        "@DefaultValue@ : the default value that will be the transliteration of all code points ;\n",
        "                 it must be:\n",
        "                   the constant string \"i\" (ignore this character),\n",
-       "                   an hexadecimal string of pair length,\n",
+       "                   an hexadecimal string of even length,\n",
        "                   or a negative integer between -1 and ".I_MINIMUM_USER_DEFINED_ERROR_CODE." (user defined error code on reading this character),\n",
        "                     this will be the error code returned so that you can freely dispatch characters into distinct error codes,\n",
        "Example : php 0fromUnicodeDataToDefaultProfile.php 1UnicodeData_10.0.0.txt \"tp_UTF-8__ERROR.txt\" UTF-8 -2\n",

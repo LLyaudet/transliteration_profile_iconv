@@ -64,7 +64,7 @@ catch(Exception $oException){
   echo $oException->getMessage(), "\n";
 
   echo "------------------------------------------------------------\n",
-       "----- Script 0generateProfileFrom8BitEncodingToUnicode  -----\n",
+       "----- Script 0generateProfileFrom8BitEncodingToUnicode -----\n",
        "------------------------------------------------------------\n",
        "Usage : php 0generateProfileFrom8BitEncodingToUnicode.php @8BitEncoding@ @UnicodeEncoding@\n",
        "@8BitEncoding@ : name of the input encoding, e.g. \"ISO-8859-1\"\n",

@@ -33,6 +33,7 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 //Limitations
 #define I_MAXIMUM_LENGTH_OF_TRANSLITERATION_PER_CHARACTER (((long long int)1 << 32) - 1)
 #define I_MINIMUM_USER_DEFINED_ERROR_CODE (-((long int)1 << 15))
+#define I_MAXIMUM_SON 255 //for now we're working with octets
 
 //Status constants
 #define I_STATUS__SKIP 0
@@ -59,6 +60,7 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 #define I_ERROR__WRONG_PROFILE_TYPE 16
 #define I_ERROR__UNKNOWN_READ_STATE 17
 #define I_ERROR__ROOT_NODE_SHOULD_HAVE_SKIP_STATUS_AND_NO_TRANSLITERATION 18
+#define I_ERROR__LINE_MUST_CONTINUE_WITH_DECIMAL_DIGIT_OR_LINE_RETURN 19
 //Negative error codes are user defined
 
 //Profile types
@@ -179,7 +181,7 @@ int transliteration_profile_iconv(
   size_t i_size_input_string,
   unsigned char** p_s_output_string,
   size_t* p_i_size_output_string,
-  size_t* p_i_current_read_offset
+  size_t* p_i_current_read_offset//for debug if needed
 );
 
 
@@ -270,7 +272,7 @@ int transliteration_profile_iconv__raw(
   size_t i_size_input_string,
   unsigned char** p_s_output_string,
   size_t* p_i_size_output_string,
-  size_t* p_i_current_read_offset
+  size_t* p_i_current_read_offset//for debug if needed
 );
 
 
@@ -285,7 +287,7 @@ int transliteration_profile_iconv__shrink1(
   size_t i_size_input_string,
   unsigned char** p_s_output_string,
   size_t* p_i_size_output_string,
-  size_t* p_i_current_read_offset
+  size_t* p_i_current_read_offset//for debug if needed
 );
 
 
