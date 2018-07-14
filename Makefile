@@ -136,7 +136,7 @@ run-tests:
 	cd ./tests_benchmarks/test3/ && echo "\nTest3:" && ./test3.exe && cd ../..
 	cd ./tests_benchmarks/test4/ && echo "\nTest4:" && ./test4.exe && cd ../..
 
-run-tests-dyn: install
+run-tests-dynamic: install
 	cd ./tests_benchmarks/test1/ && echo "\nTest1 dyn:" && ./test1_dyn.exe && cd ../..
 	cd ./tests_benchmarks/test2/ && echo "\nTest2 dyn:" && ./test2_dyn.exe && cd ../..
 	cd ./tests_benchmarks/test3/ && echo "\nTest3 dyn:" && ./test3_dyn.exe && cd ../..
