@@ -50,11 +50,11 @@ int transliteration_profile_load_from_text(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_load_from_text() %s %d %d %d\n",
+      "Call: transliteration_profile_load_from_text() %s %p %p %p\n",
       s_filename,
-      p_p_transliteration_profile,
-      p_i_current_line,
-      p_i_current_column
+      (void*)p_p_transliteration_profile,
+      (void*)p_i_current_line,
+      (void*)p_i_current_column
   );
   #endif
 
@@ -124,7 +124,7 @@ int transliteration_profile_load_from_text(
   while((c = getc(file)) != EOF){
     ++(*p_i_current_column);
     #ifdef DEBUG_TRANSLITERATION_PROFILE
-    printf("line %d, column %d, read state %d\n", *p_i_current_line, *p_i_current_column, i_current_read_state);
+    printf("line %zu, column %zu, read state %d\n", *p_i_current_line, *p_i_current_column, i_current_read_state);
     #endif
 
     switch(i_current_read_state){
@@ -392,10 +392,10 @@ int transliteration_profile_load_from_bin(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_load_from_bin() %s %d %d\n",
+      "Call: transliteration_profile_load_from_bin() %s %p %p\n",
       s_filename,
-      p_p_transliteration_profile,
-      p_i_current_offset
+      (void*)p_p_transliteration_profile,
+      (void*)p_i_current_offset
   );
   #endif
 
@@ -473,11 +473,11 @@ int transliteration_profile_load_from_bin(
       break;
     }
     i_number_of_sons = p_current_node->i_maximum_son - p_current_node->i_minimum_son + 1;
-    if(fread(&(p_current_node->i_status), sizeof(int), 1, file) != 1){
+    if(fread(&(p_current_node->i_status), sizeof(int16_t), 1, file) != 1){
       i_error_code =  I_ERROR__COULD_NOT_READ_MINIMUM_SON;
       break;
     }
-    if(fread(&(p_current_node->i_transliteration_size), sizeof(unsigned long), 1, file) != 1){
+    if(fread(&(p_current_node->i_transliteration_size), sizeof(size_t), 1, file) != 1){
       i_error_code =  I_ERROR__COULD_NOT_READ_MAXIMUM_SON;
       break;
     }
@@ -582,10 +582,10 @@ int transliteration_profile_compose(
 ){
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_compose() %d %d %d\n",
-      p_transliteration_profile_1,
-      p_transliteration_profile_2,
-      p_p_transliteration_profile_result
+      "Call: transliteration_profile_compose() %p %p %p\n",
+      (void*)p_transliteration_profile_1,
+      (void*)p_transliteration_profile_2,
+      (void*)p_p_transliteration_profile_result
   );
   #endif
   switch(p_transliteration_profile_1->i_profile_type){
@@ -620,9 +620,9 @@ int transliteration_profile_dump_to_text(
 ){
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_dump_to_text() %s %d\n",
+      "Call: transliteration_profile_dump_to_text() %s %p\n",
       s_filename,
-      p_transliteration_profile
+      (void*)p_transliteration_profile
   );
   #endif
   switch(p_transliteration_profile->i_profile_type){
@@ -658,9 +658,9 @@ int transliteration_profile_dump_to_bin(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_dump_to_bin() %s %d\n",
+      "Call: transliteration_profile_dump_to_bin() %s %p\n",
       s_filename,
-      p_transliteration_profile
+      (void*)p_transliteration_profile
   );
   #endif
 
@@ -708,11 +708,11 @@ int transliteration_profile_dump_to_bin(
         i_error_code =  I_ERROR__COULD_NOT_WRITE_DATA;
         break;
       }
-      if(fwrite(&(p_current_node->i_status), sizeof(int), 1, file) != 1){
+      if(fwrite(&(p_current_node->i_status), sizeof(int16_t), 1, file) != 1){
         i_error_code =  I_ERROR__COULD_NOT_WRITE_DATA;
         break;
       }
-      if(fwrite(&(p_current_node->i_transliteration_size), sizeof(unsigned long), 1, file) != 1){
+      if(fwrite(&(p_current_node->i_transliteration_size), sizeof(size_t), 1, file) != 1){
         i_error_code =  I_ERROR__COULD_NOT_WRITE_DATA;
         break;
       }
@@ -769,8 +769,8 @@ void transliteration_profile_free(t_transliteration_profile* p_transliteration_p
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_free() %d\n",
-      p_transliteration_profile
+      "Call: transliteration_profile_free() %p\n",
+      (void*)p_transliteration_profile
   );
   #endif
 
@@ -778,8 +778,8 @@ void transliteration_profile_free(t_transliteration_profile* p_transliteration_p
   int free_node_prefix(t_transliteration_node* p_transliteration_node){
     #ifdef DEBUG_TRANSLITERATION_PROFILE
     printf(
-        "Call: free_node_prefix() %d\n",
-        p_transliteration_node
+        "Call: free_node_prefix() %p\n",
+        (void*)p_transliteration_node
     );
     #endif
     if(p_transliteration_node->s_transliteration != NULL){
@@ -793,8 +793,8 @@ void transliteration_profile_free(t_transliteration_profile* p_transliteration_p
   int free_node_postfix(t_transliteration_node* p_transliteration_node){
     #ifdef DEBUG_TRANSLITERATION_PROFILE
     printf(
-        "Call: free_node_prefix() %d\n",
-        free_node_postfix
+        "Call: free_node_postfix() %p\n",
+        (void*)p_transliteration_node
     );
     #endif
     if(p_transliteration_node->arr_p_sons != NULL){
@@ -853,13 +853,13 @@ int transliteration_profile_iconv(
 ){
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_iconv() %d %d %d %d %d %d\n",
-      p_transliteration_profile,
-      (long long int)s_input_string,
+      "Call: transliteration_profile_iconv() %p %p %zu %p %p %p\n",
+      (void*)p_transliteration_profile,
+      (void*)s_input_string,
       i_size_input_string,
-      p_s_output_string,
-      p_i_size_output_string,
-      p_i_current_read_offset
+      (void*)p_s_output_string,
+      (void*)p_i_size_output_string,
+      (void*)p_i_current_read_offset
   );
   #endif
 
@@ -910,10 +910,10 @@ int transliteration_profile_traversal(
 ){
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_traversal() %d %d %d\n",
-      p_transliteration_profile,
-      p_function_prefix,
-      p_function_postfix
+      "Call: transliteration_profile_traversal() %p %p %p\n",
+      (void*)p_transliteration_profile,
+      (void*)p_function_prefix,
+      (void*)p_function_postfix
   );
   #endif
 
@@ -952,10 +952,10 @@ int transliteration_profile_traversal__raw_node(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_traversal__raw_node() %d %d %d\n",
-      p_transliteration_node,
-      p_function_prefix,
-      p_function_postfix
+      "Call: transliteration_profile_traversal__raw_node() %p %p %p\n",
+      (void*)p_transliteration_node,
+      (void*)p_function_prefix,
+      (void*)p_function_postfix
   );
   #endif
 
@@ -998,10 +998,10 @@ int transliteration_profile_traversal__shrink1_node(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_traversal__shrink1_node() %d %d %d\n",
-      p_transliteration_node,
-      p_function_prefix,
-      p_function_postfix
+      "Call: transliteration_profile_traversal__shrink1_node() %p %p %p\n",
+      (void*)p_transliteration_node,
+      (void*)p_function_prefix,
+      (void*)p_function_postfix
   );
   #endif
 
@@ -1049,9 +1049,9 @@ int transliteration_profile_dump_to_text__raw(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_dump_to_text__raw() %s %d\n",
+      "Call: transliteration_profile_dump_to_text__raw() %s %p\n",
       s_filename,
-      p_transliteration_profile
+      (void*)p_transliteration_profile
   );
   #endif
 
@@ -1194,9 +1194,9 @@ int transliteration_profile_dump_to_text__shrink1(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_dump_to_text__shrink1() %s %d\n",
+      "Call: transliteration_profile_dump_to_text__shrink1() %s %p\n",
       s_filename,
-      p_transliteration_profile
+      (void*)p_transliteration_profile
   );
   #endif
 
@@ -1341,9 +1341,9 @@ int transliteration_profile_from_raw_to_shrink1(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_from_raw_to_shrink1() %d %d\n",
-      p_transliteration_profile_from,
-      p_p_transliteration_profile_to
+      "Call: transliteration_profile_from_raw_to_shrink1() %p %p\n",
+      (void*)p_transliteration_profile_from,
+      (void*)p_p_transliteration_profile_to
   );
   #endif
 
@@ -1539,7 +1539,6 @@ int transliteration_profile_iconv__raw(
 ){
   size_t i_allocated_length_output_string = 0;
   size_t i_new_allocated_length_output_string = 0;
-  size_t i_current_write_offset = 0;
   size_t i_offset_since_last_prefix_match = 0;
   t_transliteration_node* p_transliteration_node_root = NULL;
   t_transliteration_node* p_transliteration_node_last_match = NULL;
@@ -1549,13 +1548,13 @@ int transliteration_profile_iconv__raw(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_iconv__raw() %d %d %d %d %d %d\n",
-      p_transliteration_profile,
-      (long long int)s_input_string,
+      "Call: transliteration_profile_iconv__raw() %p %p %zu %p %p %p\n",
+      (void*)p_transliteration_profile,
+      (void*)s_input_string,
       i_size_input_string,
-      p_s_output_string,
-      p_i_size_output_string,
-      p_i_current_read_offset
+      (void*)p_s_output_string,
+      (void*)p_i_size_output_string,
+      (void*)p_i_current_read_offset
   );
   #endif
 
@@ -1672,7 +1671,6 @@ int transliteration_profile_iconv__shrink1(
 ){
   size_t i_allocated_length_output_string = 0;
   size_t i_new_allocated_length_output_string = 0;
-  size_t i_current_write_offset = 0;
   size_t i_offset_since_last_prefix_match = 0;
   t_transliteration_node* p_transliteration_node_root = NULL;
   t_transliteration_node* p_transliteration_node_last_match = NULL;
@@ -1682,13 +1680,13 @@ int transliteration_profile_iconv__shrink1(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_iconv__shrink1() %d %d %d %d %d %d\n",
-      p_transliteration_profile,
-      (long long int)s_input_string,
+      "Call: transliteration_profile_iconv__shrink1() %p %p %zu %p %p %p\n",
+      (void*)p_transliteration_profile,
+      (void*)s_input_string,
       i_size_input_string,
-      p_s_output_string,
-      p_i_size_output_string,
-      p_i_current_read_offset
+      (void*)p_s_output_string,
+      (void*)p_i_size_output_string,
+      (void*)p_i_current_read_offset
   );
   #endif
 
@@ -1816,10 +1814,10 @@ int transliteration_profile_compose__raw(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_compose__raw() %d %d %d\n",
-      p_transliteration_profile_1,
-      p_transliteration_profile_2,
-      p_p_transliteration_profile_result
+      "Call: transliteration_profile_compose__raw() %p %p %p\n",
+      (void*)p_transliteration_profile_1,
+      (void*)p_transliteration_profile_2,
+      (void*)p_p_transliteration_profile_result
   );
   #endif
 
@@ -2027,10 +2025,10 @@ int transliteration_profile_compose__shrink1(
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
-      "Call: transliteration_profile_compose__shrink1() %d %d %d\n",
-      p_transliteration_profile_1,
-      p_transliteration_profile_2,
-      p_p_transliteration_profile_result
+      "Call: transliteration_profile_compose__shrink1() %p %p %p\n",
+      (void*)p_transliteration_profile_1,
+      (void*)p_transliteration_profile_2,
+      (void*)p_p_transliteration_profile_result
   );
   #endif
 

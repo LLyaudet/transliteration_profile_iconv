@@ -29,8 +29,6 @@ to_error.txt contains a string AACAA that must return -12 according to the profi
 Both tests are performed with "raw" and "shrink1" tree structures representing the profile.
 */
 
-//#define DEBUG_TRANSLITERATION_PROFILE
-
 #include "../test_functions.c"
 
 
@@ -59,7 +57,7 @@ int main(int argc, char *argv[]){
 
     if(i_result != 0){
       printf(
-          "An error occured when loading profile at line %d and column %d (error code %d).\n",
+          "An error occurred when loading profile at line %zu and column %zu (error code %d).\n",
           i_current_line,
           i_current_column,
           i_result
@@ -74,7 +72,7 @@ int main(int argc, char *argv[]){
     );
     if(i_result != 0){
       printf(
-          "An error occured when shrinking profile (error code %d).\n",
+          "An error occurred when shrinking profile (error code %d).\n",
           i_result
       );
       break;
@@ -87,7 +85,7 @@ int main(int argc, char *argv[]){
     );
     if(i_result != 0){
       printf(
-          "An error occured when converting first file to string (error code %d).\n",
+          "An error occurred when converting first file to string (error code %d).\n",
           i_result
       );
       break;
@@ -100,7 +98,7 @@ int main(int argc, char *argv[]){
     );
     if(i_result != 0){
       printf(
-          "An error occured when dumping copy of to_convert.txt (error code %d).\n",
+          "An error occurred when dumping copy of to_convert.txt (error code %d).\n",
           i_result
       );
       break;
@@ -128,8 +126,8 @@ int main(int argc, char *argv[]){
     );
     if(i_result != 0){
       printf(
-          "An error occured when transliterating (raw) first file"
-          " (error code %d, current_read_offset %d).\n",
+          "An error occurred when transliterating (raw) first file"
+          " (error code %d, current_read_offset %zu).\n",
           i_result,
           i_current_read_offset
       );
@@ -143,7 +141,7 @@ int main(int argc, char *argv[]){
     );
     if(i_result != 0){
       printf(
-          "An error occured when dumping first result (raw) (error code %d).\n",
+          "An error occurred when dumping first result (raw) (error code %d).\n",
           i_result
       );
       break;
@@ -174,8 +172,8 @@ int main(int argc, char *argv[]){
     );
     if(i_result != 0){
       printf(
-          "An error occured when transliterating (shrink1) first file"
-          " (error code %d, current_read_offset %d).\n",
+          "An error occurred when transliterating (shrink1) first file"
+          " (error code %d, current_read_offset %zu).\n",
           i_result,
           i_current_read_offset
       );
@@ -189,7 +187,7 @@ int main(int argc, char *argv[]){
     );
     if(i_result != 0){
       printf(
-          "An error occured when dumping first result (shrink1) (error code %d).\n",
+          "An error occurred when dumping first result (shrink1) (error code %d).\n",
           i_result
       );
       break;
@@ -219,7 +217,7 @@ int main(int argc, char *argv[]){
     );
     if(i_result != 0){
       printf(
-          "An error occured when converting second file to string (error code %d).\n",
+          "An error occurred when converting second file to string (error code %d).\n",
           i_result
       );
       break;
@@ -236,7 +234,7 @@ int main(int argc, char *argv[]){
     if(i_result != -12){
       printf(
           "Error -12 was not thrown when transliterating (raw) second file"
-          " (error code %d, current_read_offset %d).\n",
+          " (error code %d, current_read_offset %zu).\n",
           i_result,
           i_current_read_offset
       );
@@ -256,13 +254,14 @@ int main(int argc, char *argv[]){
     if(i_result != -12){
       printf(
           "Error -12 was not thrown when transliterating (shrink1) second file"
-          " (error code %d, current_read_offset %d).\n",
+          " (error code %d, current_read_offset %zu).\n",
           i_result,
           i_current_read_offset
       );
       i_result = -12;
       break;
     }
+    i_result = 0;
     printf("Error -12 was correctly thrown when transliterating (shrink1) second file\n");
   }
   while(0);

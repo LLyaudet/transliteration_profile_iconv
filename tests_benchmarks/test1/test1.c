@@ -23,8 +23,6 @@ This test loads this profile in a tree structure in memory and dumps a copy of i
 It then checks that the copy is identical to the original.
 */
 
-//#define DEBUG_TRANSLITERATION_PROFILE
-
 #include "../test_functions.c"
 
 
@@ -36,12 +34,12 @@ __attribute__((noinline)) void foo(
   size_t* p_i_current_column
 ){
   printf(
-      "%s %d %d %d %d %d %d\n",
+      "%s %p %p %p %p %zu %zu\n",
       s_filename,
-      p_p_transliteration_profile,
-      p_i_current_line,
-      p_i_current_column,
-      *p_p_transliteration_profile,
+      (void*)p_p_transliteration_profile,
+      (void*)p_i_current_line,
+      (void*)p_i_current_column,
+      (void*)*p_p_transliteration_profile,
       *p_i_current_line,
       *p_i_current_column
   );
@@ -49,12 +47,12 @@ __attribute__((noinline)) void foo(
   ++(*p_i_current_line);
   ++(*p_i_current_column);
   printf(
-      "%s %d %d %d %d %d %d\n",
+      "%s %p %p %p %p %zu %zu\n",
       s_filename,
-      p_p_transliteration_profile,
-      p_i_current_line,
-      p_i_current_column,
-      *p_p_transliteration_profile,
+      (void*)p_p_transliteration_profile,
+      (void*)p_i_current_line,
+      (void*)p_i_current_column,
+      (void*)*p_p_transliteration_profile,
       *p_i_current_line,
       *p_i_current_column
   );
@@ -81,7 +79,7 @@ int main(int argc, char *argv[]){
 
   if(i_result != 0){
     printf(
-        "An error occured when loading profile at line %d and column %d (error code %d).\n",
+        "An error occurred when loading profile at line %zu and column %zu (error code %d).\n",
         i_current_line,
         i_current_column,
         i_result
@@ -98,7 +96,7 @@ int main(int argc, char *argv[]){
 
     if(i_result != 0){
       printf(
-          "An error occured when dumping the profile (error code %d).\n",
+          "An error occurred when dumping the profile (error code %d).\n",
           i_result
       );
 

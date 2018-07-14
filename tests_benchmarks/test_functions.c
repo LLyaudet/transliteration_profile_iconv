@@ -18,7 +18,7 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 */
 
 #include <unistd.h>
-#include "../transliteration_profile_iconv.c"
+#include "../transliteration_profile_iconv.h"
 
 int mydiff(char* s_filename1, char* s_filename2){
   FILE* file1 = NULL;

@@ -23,8 +23,6 @@ Then it composes these two profiles to obtain a third profile from ISO-8859-1 to
 The third profile is dumped to text and compared to the reference profile from ISO-8859-1 to ISO-8859-15.
 */
 
-//#define DEBUG_TRANSLITERATION_PROFILE
-
 #include "../test_functions.c"
 
 
@@ -49,7 +47,7 @@ int main(int argc, char *argv[]){
 
     if(i_result != 0){
       printf(
-          "An error occured when loading profile 1 at line %d and column %d (error code %d).\n",
+          "An error occurred when loading profile 1 at line %zu and column %zu (error code %d).\n",
           i_current_line,
           i_current_column,
           i_result
@@ -67,7 +65,7 @@ int main(int argc, char *argv[]){
 
     if(i_result != 0){
       printf(
-          "An error occured when loading profile 2 at line %d and column %d (error code %d).\n",
+          "An error occurred when loading profile 2 at line %zu and column %zu (error code %d).\n",
           i_current_line,
           i_current_column,
           i_result
@@ -83,7 +81,7 @@ int main(int argc, char *argv[]){
     );
     if(i_result != 0){
       printf(
-          "An error occured when composing profiles (error code %d).\n",
+          "An error occurred when composing profiles (error code %d).\n",
           i_result
       );
       break;
@@ -97,7 +95,7 @@ int main(int argc, char *argv[]){
 
     if(i_result != 0){
       printf(
-          "An error occured when dumping the profile (error code %d).\n",
+          "An error occurred when dumping the profile (error code %d).\n",
           i_result
       );
       break;

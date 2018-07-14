@@ -75,6 +75,9 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 #define I_PROFILE_TYPE__RAW 1
 #define I_PROFILE_TYPE__SHRINK1 2
 
+//#define DEBUG_TRANSLITERATION_PROFILE
+
+
 
 //------------------------------------------------------------------------------------
 //Structures
@@ -84,13 +87,13 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
  * The internal nodes for the transliteration profile
  */
 typedef struct transliteration_node {
-  unsigned long long i_node_index;
+  size_t i_node_index;
   unsigned char i_minimum_son;
   unsigned char i_maximum_son;
   struct transliteration_node** arr_p_sons;
-  int i_status;
-  unsigned long i_transliteration_size;
-  unsigned long i_allocated_size;
+  int16_t i_status;
+  size_t i_transliteration_size;
+  size_t i_allocated_size;
   unsigned char* s_transliteration;
 } t_transliteration_node;
 
@@ -100,7 +103,7 @@ typedef struct transliteration_node {
  * The transliteration profile
  */
 typedef struct {
-  int i_profile_type;
+  unsigned char i_profile_type;
   size_t i_number_of_nodes;
   size_t i_max_depth;
   t_transliteration_node* p_root_node;

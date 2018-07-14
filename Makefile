@@ -15,27 +15,143 @@
 #
 #©Copyright 2018 Laurent Lyaudet
 
+CC=gcc
+CFLAGS=-Wall
+VERSION=1_0_0
 
+.PHONY: run-tests run-tests-dynamic clean
+
+
+#-----------------------------------------------------------
+#Build library
+#-----------------------------------------------------------
+build: build-static build-dynamic
+
+
+#Static library
+build-static: ./bin/libtransliteration_profile_iconv_$(VERSION).a
+
+./bin/libtransliteration_profile_iconv_$(VERSION).a: ./bin/transliteration_profile_iconv.o
+	ar -rcs ./bin/libtransliteration_profile_iconv_$(VERSION).a ./bin/transliteration_profile_iconv.o
+#	ar -rc ./bin/libtransliteration_profile_iconv_$(VERSION).a ./bin/transliteration_profile_iconv.o
+#	ranlib ./bin/libtransliteration_profile_iconv_$(VERSION).a
+
+./bin/transliteration_profile_iconv.o: ./transliteration_profile_iconv.h ./transliteration_profile_iconv.c
+	$(CC) $(CFLAGS) -c ./transliteration_profile_iconv.c -o ./bin/transliteration_profile_iconv.o
+
+
+#Dynamic library
+build-dynamic: ./bin/libtransliteration_profile_iconv_$(VERSION).so
+
+./bin/libtransliteration_profile_iconv_$(VERSION).so: ./bin/transliteration_profile_iconv_dyn.o
+	$(CC) -shared -o ./bin/libtransliteration_profile_iconv_$(VERSION).so ./bin/transliteration_profile_iconv_dyn.o
+
+./bin/transliteration_profile_iconv_dyn.o: ./transliteration_profile_iconv.h ./transliteration_profile_iconv.c
+	$(CC) $(CFLAGS) -fPIC -c ./transliteration_profile_iconv.c -o ./bin/transliteration_profile_iconv_dyn.o
+
+
+
+#-----------------------------------------------------------
+#Build tests
+#-----------------------------------------------------------
 build-tests: build-test1 build-test2 build-test3 build-test4
 
-build-test1:
-	gcc -W ./tests_benchmarks/test1/test1.c -o ./tests_benchmarks/test1/test1.exe
 
-build-test2:
-	gcc -W ./tests_benchmarks/test2/test2.c -o ./tests_benchmarks/test2/test2.exe
+#Test 1
+build-test1: ./tests_benchmarks/test1/test1.exe ./tests_benchmarks/test1/test1_dyn.exe
 
-build-test3:
-	gcc -W ./tests_benchmarks/test3/test3.c -o ./tests_benchmarks/test3/test3.exe
+#static linking requires the library to come after the test object
+./tests_benchmarks/test1/test1.exe: ./bin/libtransliteration_profile_iconv_$(VERSION).a ./tests_benchmarks/test1/test1.o
+	$(CC) -static -L./bin/ ./tests_benchmarks/test1/test1.o -ltransliteration_profile_iconv_$(VERSION) -o ./tests_benchmarks/test1/test1.exe
 
-build-test4:
-	gcc -W ./tests_benchmarks/test4/test4.c -o ./tests_benchmarks/test4/test4.exe
+./tests_benchmarks/test1/test1_dyn.exe: ./bin/libtransliteration_profile_iconv_$(VERSION).so ./tests_benchmarks/test1/test1.o
+	$(CC) -L./bin/ -ltransliteration_profile_iconv_$(VERSION) ./tests_benchmarks/test1/test1.o -o ./tests_benchmarks/test1/test1_dyn.exe
 
+./tests_benchmarks/test1/test1.o: ./transliteration_profile_iconv.h ./tests_benchmarks/test_functions.c ./tests_benchmarks/test1/test1.c
+	$(CC) $(CFLAGS) -c ./tests_benchmarks/test1/test1.c -o ./tests_benchmarks/test1/test1.o
+
+
+#Test 2
+build-test2: ./tests_benchmarks/test2/test2.exe ./tests_benchmarks/test2/test2_dyn.exe
+
+#static linking requires the library to come after the test object
+./tests_benchmarks/test2/test2.exe: ./bin/libtransliteration_profile_iconv_$(VERSION).a ./tests_benchmarks/test2/test2.o
+	$(CC) -static -L./bin/ ./tests_benchmarks/test2/test2.o -ltransliteration_profile_iconv_$(VERSION) -o ./tests_benchmarks/test2/test2.exe
+
+./tests_benchmarks/test2/test2_dyn.exe: ./bin/libtransliteration_profile_iconv_$(VERSION).so ./tests_benchmarks/test2/test2.o
+	$(CC) -L./bin/ -ltransliteration_profile_iconv_$(VERSION) ./tests_benchmarks/test2/test2.o -o ./tests_benchmarks/test2/test2_dyn.exe
+
+./tests_benchmarks/test2/test2.o: ./transliteration_profile_iconv.h ./tests_benchmarks/test_functions.c ./tests_benchmarks/test2/test2.c
+	$(CC) $(CFLAGS) -c ./tests_benchmarks/test2/test2.c -o ./tests_benchmarks/test2/test2.o
+
+
+#Test 3
+build-test3: ./tests_benchmarks/test3/test3.exe ./tests_benchmarks/test3/test3_dyn.exe
+
+#static linking requires the library to come after the test object
+./tests_benchmarks/test3/test3.exe: ./bin/libtransliteration_profile_iconv_$(VERSION).a ./tests_benchmarks/test3/test3.o
+	$(CC) -static -L./bin/ ./tests_benchmarks/test3/test3.o -ltransliteration_profile_iconv_$(VERSION) -o ./tests_benchmarks/test3/test3.exe
+
+./tests_benchmarks/test3/test3_dyn.exe: ./bin/libtransliteration_profile_iconv_$(VERSION).so ./tests_benchmarks/test3/test3.o
+	$(CC) -L./bin/ -ltransliteration_profile_iconv_$(VERSION) ./tests_benchmarks/test3/test3.o -o ./tests_benchmarks/test3/test3_dyn.exe
+
+./tests_benchmarks/test3/test3.o: ./transliteration_profile_iconv.h ./tests_benchmarks/test_functions.c ./tests_benchmarks/test3/test3.c
+	$(CC) $(CFLAGS) -c ./tests_benchmarks/test3/test3.c -o ./tests_benchmarks/test3/test3.o
+
+
+#Test 4
+build-test4: ./tests_benchmarks/test4/test4.exe ./tests_benchmarks/test4/test4_dyn.exe
+
+#static linking requires the library to come after the test object
+./tests_benchmarks/test4/test4.exe: ./bin/libtransliteration_profile_iconv_$(VERSION).a ./tests_benchmarks/test4/test4.o
+	$(CC) -static -L./bin/ ./tests_benchmarks/test4/test4.o -ltransliteration_profile_iconv_$(VERSION) -o ./tests_benchmarks/test4/test4.exe
+
+./tests_benchmarks/test4/test4_dyn.exe: ./bin/libtransliteration_profile_iconv_$(VERSION).so ./tests_benchmarks/test4/test4.o
+	$(CC) -L./bin/ -ltransliteration_profile_iconv_$(VERSION) ./tests_benchmarks/test4/test4.o -o ./tests_benchmarks/test4/test4_dyn.exe
+
+./tests_benchmarks/test4/test4.o: ./transliteration_profile_iconv.h ./tests_benchmarks/test_functions.c ./tests_benchmarks/test4/test4.c
+	$(CC) $(CFLAGS) -c ./tests_benchmarks/test4/test4.c -o ./tests_benchmarks/test4/test4.o
+
+
+
+#-----------------------------------------------------------
+#Install
+#-----------------------------------------------------------
+install: /usr/lib/libtransliteration_profile_iconv_$(VERSION).so
+
+/usr/lib/libtransliteration_profile_iconv_$(VERSION).so: ./bin/libtransliteration_profile_iconv_$(VERSION).so
+	cp -p ./bin/libtransliteration_profile_iconv_$(VERSION).so /usr/lib
+	chmod 755 /usr/lib/libtransliteration_profile_iconv_$(VERSION).so
+
+
+
+#-----------------------------------------------------------
+#Run tests
+#-----------------------------------------------------------
+test: build-tests run-tests
+
+run-tests:
+	cd ./tests_benchmarks/test1/ && echo "\nTest1:" && ./test1.exe && cd ../..
+	cd ./tests_benchmarks/test2/ && echo "\nTest2:" && ./test2.exe && cd ../..
+	cd ./tests_benchmarks/test3/ && echo "\nTest3:" && ./test3.exe && cd ../..
+	cd ./tests_benchmarks/test4/ && echo "\nTest4:" && ./test4.exe && cd ../..
+
+run-tests-dyn: install
+	cd ./tests_benchmarks/test1/ && echo "\nTest1 dyn:" && ./test1_dyn.exe && cd ../..
+	cd ./tests_benchmarks/test2/ && echo "\nTest2 dyn:" && ./test2_dyn.exe && cd ../..
+	cd ./tests_benchmarks/test3/ && echo "\nTest3 dyn:" && ./test3_dyn.exe && cd ../..
+	cd ./tests_benchmarks/test4/ && echo "\nTest4 dyn:" && ./test4_dyn.exe && cd ../..
+
+
+
+#-----------------------------------------------------------
+#Clean
+#-----------------------------------------------------------
 clean:
-	rm -f ./tests_benchmarks/test1/*.exe
-	rm -f ./tests_benchmarks/test1/*.test_result
-	rm -f ./tests_benchmarks/test2/*.exe
-	rm -f ./tests_benchmarks/test2/*.test_result
-	rm -f ./tests_benchmarks/test3/*.exe
-	rm -f ./tests_benchmarks/test3/*.test_result
-	rm -f ./tests_benchmarks/test4/*.exe
-	rm -f ./tests_benchmarks/test4/*.test_result
+	rm -f ./bin/*
+	rm -f ./tests_benchmarks/test1/*.o ./tests_benchmarks/test1/*.exe ./tests_benchmarks/test1/*.test_result
+	rm -f ./tests_benchmarks/test2/*.o ./tests_benchmarks/test2/*.exe ./tests_benchmarks/test2/*.test_result
+	rm -f ./tests_benchmarks/test3/*.o ./tests_benchmarks/test3/*.exe ./tests_benchmarks/test3/*.test_result
+	rm -f ./tests_benchmarks/test4/*.o ./tests_benchmarks/test4/*.exe ./tests_benchmarks/test4/*.test_result
+
+

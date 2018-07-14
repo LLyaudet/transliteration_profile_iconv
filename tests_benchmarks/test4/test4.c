@@ -24,8 +24,6 @@ Then the binary version is loaded again into a tree structure and this structure
 It then checks that the copy is identical to the original.
 */
 
-//#define DEBUG_TRANSLITERATION_PROFILE
-
 #include "../test_functions.c"
 
 
@@ -48,7 +46,7 @@ int main(int argc, char *argv[]){
 
   if(i_result != 0){
     printf(
-        "An error occured when loading profile at line %d and column %d (error code %d).\n",
+        "An error occurred when loading profile at line %zu and column %zu (error code %d).\n",
         i_current_line,
         i_current_column,
         i_result
@@ -65,7 +63,7 @@ int main(int argc, char *argv[]){
 
     if(i_result != 0){
       printf(
-          "An error occured when dumping the profile to bin (error code %d).\n",
+          "An error occurred when dumping the profile to bin (error code %d).\n",
           i_result
       );
       break;
@@ -83,7 +81,7 @@ int main(int argc, char *argv[]){
 
     if(i_result != 0){
       printf(
-          "An error occured when loading profile from bin at offset %d (error code %d).\n",
+          "An error occurred when loading profile from bin at offset %zu (error code %d).\n",
           i_current_offset,
           i_result
       );
@@ -98,7 +96,7 @@ int main(int argc, char *argv[]){
 
     if(i_result != 0){
       printf(
-          "An error occured when dumping the profile (error code %d).\n",
+          "An error occurred when dumping the profile (error code %d).\n",
           i_result
       );
 
