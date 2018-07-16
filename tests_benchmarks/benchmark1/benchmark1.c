@@ -54,10 +54,11 @@ If I rename ISO-8859-1-test everywhere with ISO-8859-1 which I don't recommend (
 (You can check that the setlocale is correct since it returns "fr_FR@test".
 Euro symbol is transliterated to EUR instead of the currency symbol...
 What I could test with PHP is not working with C.)
-I tried also adding the locale in /usr/share/i18n/SUPPORTED, 
-then running locale-gen or iconvconfig.
+I tried also adding the locale in /usr/share/i18n/SUPPORTED,
+then running locale-gen and iconvconfig.
 But it didn't generate a new gconv module for ISO-8859-1-test.
-So far I don't know if it's possible to generate a new gconv module for a new charmap without compiling glibc. I didn't found any command to do so.
+So far I don't know if it's possible to generate a new gconv module for a new charmap without compiling glibc.
+I didn't found any command to do so.
 */
 
 #include "../test_functions.c"
@@ -93,7 +94,7 @@ int main(int argc, char *argv[]){
   char* output_buffer_copy_of_pointer = NULL;
   size_t i_outbytes_left = 1024;
   int b_activate_iconv = 0;
-  
+
   do{
     printf("Creating binary profile\n");
     i_result = transliteration_profile_load_from_text(
@@ -142,6 +143,7 @@ int main(int argc, char *argv[]){
     }
     s_input_string_copy_of_pointer = s_input_string;
     i_copy_size_input_string = i_size_input_string;
+
 
     printf("-with text profile: ");
     i_result = transliteration_profile_iconv(
@@ -257,6 +259,7 @@ int main(int argc, char *argv[]){
     transliteration_profile_free(p_transliteration_profile);
     p_transliteration_profile = NULL;
 
+
     if(b_activate_iconv){
       printf("-with iconv(): ");
       output_buffer = (char*) calloc(i_outbytes_left, sizeof(char));
@@ -276,7 +279,7 @@ int main(int argc, char *argv[]){
       }
       setlocale(LC_ALL, "fr_FR@test");
 
-      iconv_descriptor = iconv_open("ISO-8859-1-test//TRANSLIT//IGNORE", "UTF-8"); 
+      iconv_descriptor = iconv_open("ISO-8859-1-test//TRANSLIT//IGNORE", "UTF-8");
       if(iconv_descriptor == (iconv_t) -1){
         printf("An error occurred when opening iconv descriptor.\n");
         i_result= -1;
@@ -288,6 +291,7 @@ int main(int argc, char *argv[]){
         }
         break;
       }
+
       i_result = (int) iconv(
           iconv_descriptor,
           (char**) &s_input_string_copy_of_pointer,
@@ -295,16 +299,15 @@ int main(int argc, char *argv[]){
           &output_buffer_copy_of_pointer,
           &i_outbytes_left
       );
-      
       if(i_result == -1){
         printf("An error occurred when transliterating (iconv), errno = %d \n", errno);
         switch(errno){
-          case EILSEQ: 
+          case EILSEQ:
             printf(
               "The conversion stopped because of an invalid byte sequence in the input.\n"
               "After the call, *inbuf points at the first byte of the invalid byte sequence.\n"
-              "Input string before pointer %p and content %s\n"
-              "Input string after pointer %p and content %s\n",
+              "Input string before: pointer %p and content %s\n"
+              "Input string after: pointer %p and content %s\n",
               (void*)s_input_string,
               s_input_string,
               (void*)s_input_string_copy_of_pointer,
@@ -381,6 +384,7 @@ int main(int argc, char *argv[]){
       iconv_descriptor = (iconv_t)-1;
     }
 
+
     //---------------------------------------------------
     //First benchmark: ideal conditions
     //---------------------------------------------------
@@ -404,7 +408,7 @@ int main(int argc, char *argv[]){
     }
 
     clock_gettime(CLOCK_MONOTONIC, &start);
-    for(long int i = 0; i < i_number_of_iterations; ++i){ 
+    for(long int i = 0; i < i_number_of_iterations; ++i){
       i_result = transliteration_profile_iconv(
           p_transliteration_profile,
           s_input_string,
@@ -429,10 +433,10 @@ int main(int argc, char *argv[]){
     f_elapsed_time = finish.tv_sec - start.tv_sec;
     f_elapsed_time += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
     printf("%f \n", f_elapsed_time);
-    
 
     transliteration_profile_free(p_transliteration_profile);
     p_transliteration_profile = NULL;
+
 
     printf("-with binary profile: ");
     i_result = transliteration_profile_load_from_bin(
@@ -488,7 +492,7 @@ int main(int argc, char *argv[]){
     printf("Second benchmark: worst conditions\n");
     printf("-with text profile: ");
     clock_gettime(CLOCK_MONOTONIC, &start);
-    for(long int i = 0; i < i_number_of_iterations; ++i){ 
+    for(long int i = 0; i < i_number_of_iterations; ++i){
       i_result = transliteration_profile_load_from_text(
           "tp_benchmark.txt",
           &p_transliteration_profile,
@@ -506,7 +510,6 @@ int main(int argc, char *argv[]){
         return i_result;
       }
 
-    
       i_result = transliteration_profile_iconv(
           p_transliteration_profile,
           s_input_string,
@@ -533,6 +536,7 @@ int main(int argc, char *argv[]){
     f_elapsed_time = finish.tv_sec - start.tv_sec;
     f_elapsed_time += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
     printf("%f \n", f_elapsed_time);
+
 
     printf("-with binary profile: ");
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -588,7 +592,7 @@ int main(int argc, char *argv[]){
     printf("Third benchmark: average conditions\n");
     printf("-with text profile: ");
     clock_gettime(CLOCK_MONOTONIC, &start);
-    for(long int i = 0; i < i_number_of_iterations / i_number_of_sub_iterations; ++i){ 
+    for(long int i = 0; i < i_number_of_iterations / i_number_of_sub_iterations; ++i){
       i_result = transliteration_profile_load_from_text(
           "tp_benchmark.txt",
           &p_transliteration_profile,
@@ -634,6 +638,7 @@ int main(int argc, char *argv[]){
     f_elapsed_time = finish.tv_sec - start.tv_sec;
     f_elapsed_time += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
     printf("%f \n", f_elapsed_time);
+
 
     printf("-with binary profile: ");
     clock_gettime(CLOCK_MONOTONIC, &start);
