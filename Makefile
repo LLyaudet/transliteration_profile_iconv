@@ -19,7 +19,7 @@ CC=gcc
 CFLAGS=-Wall
 VERSION=1_0_0
 
-.PHONY: run-tests run-tests-dynamic clean
+.PHONY: run-tests run-tests-dynamic clean run-benchmarks run-benchmarks-dynamic
 
 
 #-----------------------------------------------------------
@@ -145,6 +145,49 @@ run-tests-dynamic: install
 
 
 #-----------------------------------------------------------
+#Build benchmarks
+#-----------------------------------------------------------
+build-benchmarks: build-benchmark1
+
+
+#Benchmark 1
+build-benchmark1: ./tests_benchmarks/benchmark1/benchmark1.exe ./tests_benchmarks/benchmark1/benchmark1_dyn.exe
+#/usr/share/i18n/locales/fr_FR@test /usr/share/i18n/charmaps/ISO-8859-1-test.gz
+#	echo "\nfr_FR@test ISO-8859-1-test\n" >> /etc/locale.gen
+#	locale-gen
+
+#static linking requires the library to come after the test object
+./tests_benchmarks/benchmark1/benchmark1.exe: ./bin/libtransliteration_profile_iconv_$(VERSION).a ./tests_benchmarks/benchmark1/benchmark1.o
+	$(CC) -static -L./bin/ ./tests_benchmarks/benchmark1/benchmark1.o -ltransliteration_profile_iconv_$(VERSION) -o ./tests_benchmarks/benchmark1/benchmark1.exe
+
+./tests_benchmarks/benchmark1/benchmark1_dyn.exe: ./bin/libtransliteration_profile_iconv_$(VERSION).so ./tests_benchmarks/benchmark1/benchmark1.o
+	$(CC) -L./bin/ -ltransliteration_profile_iconv_$(VERSION) ./tests_benchmarks/benchmark1/benchmark1.o -o ./tests_benchmarks/benchmark1/benchmark1_dyn.exe
+
+./tests_benchmarks/benchmark1/benchmark1.o: ./transliteration_profile_iconv.h ./tests_benchmarks/test_functions.c ./tests_benchmarks/benchmark1/benchmark1.c
+	$(CC) $(CFLAGS) -c ./tests_benchmarks/benchmark1/benchmark1.c -o ./tests_benchmarks/benchmark1/benchmark1.o
+
+/usr/share/i18n/locales/fr_FR@test: ./tests_benchmarks/benchmark1/fr_FR@test
+	cp ./tests_benchmarks/benchmark1/fr_FR@test /usr/share/i18n/locales/
+
+/usr/share/i18n/charmaps/ISO-8859-1-test.gz: ./tests_benchmarks/benchmark1/ISO-8859-1-test.gz
+	cp ./tests_benchmarks/benchmark1/ISO-8859-1-test.gz /usr/share/i18n/charmaps/
+
+
+
+#-----------------------------------------------------------
+#Run benchmarks
+#-----------------------------------------------------------
+benchmarks: build-benchmarks run-benchmarks
+
+run-benchmarks:
+	cd ./tests_benchmarks/benchmark1/ && echo "\nBenchmark1:" && ./benchmark1.exe && cd ../..
+
+run-benchmarks-dynamic: install
+	cd ./tests_benchmarks/benchmark1/ && echo "\nBenchmark1 dyn:" && ./benchmark1_dyn.exe && cd ../..
+
+
+
+#-----------------------------------------------------------
 #Clean
 #-----------------------------------------------------------
 clean:
@@ -153,5 +196,6 @@ clean:
 	rm -f ./tests_benchmarks/test2/*.o ./tests_benchmarks/test2/*.exe ./tests_benchmarks/test2/*.test_result
 	rm -f ./tests_benchmarks/test3/*.o ./tests_benchmarks/test3/*.exe ./tests_benchmarks/test3/*.test_result
 	rm -f ./tests_benchmarks/test4/*.o ./tests_benchmarks/test4/*.exe ./tests_benchmarks/test4/*.test_result
+	rm -f ./tests_benchmarks/benchmark1/*.o ./tests_benchmarks/benchmark1/*.exe ./tests_benchmarks/benchmark1/*.test_result
 
 

@@ -1,0 +1,4 @@
+bin/libtransliteration_profile_iconv_1_0_0.a
+bin/libtransliteration_profile_iconv_1_0_0.so
+bin/transliteration_profile_iconv.o
+bin/transliteration_profile_iconv_dyn.o
