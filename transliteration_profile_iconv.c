@@ -981,7 +981,7 @@ int transliteration_profile_traversal__raw_node(
 
   i_result = (*p_function_postfix)(p_transliteration_node);
   return i_result;
-}
+}//end function transliteration_profile_traversal__raw_node()
 
 
 
@@ -1027,8 +1027,7 @@ int transliteration_profile_traversal__shrink1_node(
 
   i_result = (*p_function_postfix)(p_transliteration_node);
   return i_result;
-}
-
+}//end function transliteration_profile_traversal__shrink1_node()
 
 
 
