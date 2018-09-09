@@ -15,7 +15,7 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 
 ©Copyright 2018 Laurent Lyaudet
 
-This file comes with the version 1.0.0 of transliteration_profile_iconv.
+This file comes with the version 1.1.0 of transliteration_profile_iconv.
 
 ----------------------------------------------------------------------------
 Preamble
@@ -91,8 +91,10 @@ The transliteration profiles can be saved as/loaded from a text file where:
   - or the second hexadecimal string may be replaced by:
     -- 'i' this single letter will tell to transliteration_profile_iconv to ignore the input "character/tuple/prefix"
        (or equivalently maps it to the empty tuple) and continue,
-       'i' is explicit because a missing hexadecimal string may also denote an error when the user created his profile
-    -- a negative integer between -1 and -32768: will define user controlled error codes in case the user wants to distinguish between untransliterated characters.
+       'i' is explicit because a missing hexadecimal string may also denote an error
+       when the user created his profile
+    -- a negative integer between -1 and -32768: will define user controlled error codes,
+       in case the user wants to distinguish between untransliterated characters.
 - there is no comment, no other character allowed apart ASCII [a-f0-9 i\-]
 
 Loaded transliteration profiles are stored in a tree structure that is memory expensive,
@@ -102,7 +104,8 @@ and that's why transliteration_profile_iconv is less efficient than iconv for mo
 ----------------------------------------------------------------------------
 Going further
 ----------------------------------------------------------------------------
-Remember "We have the following additional assumption that no input tuple is a prefix of another input tuple.", I lied :P
+Remember "We have the following additional assumption that no input tuple is a prefix of another input tuple."?
+I lied :P
 It is not hard to extend the library to greedily match the longest input tuple.
 Let's generalize a little bit.
 Assume that we have all the tuples of octets that we want without any constraint/assumption.
@@ -114,11 +117,14 @@ Assume that that choice is deterministic and doesn't change with the "past" of t
 (the part of the string that was already processed), then there was no reason to say in the profile
 that $t2 was a possible match if we choose $t1 instead of $t2.
 What happens if we have 3 possibles prefixes or more?
-If the choices between the possible prefixes are transitive, we have an order and the greedy match is still the only option.
+If the choices between the possible prefixes are transitive,
+then we have an order and the greedy match is still the only option.
 (That would be the case if you assign to each match a "priority", like an integer.)
 But that's not the more general framework (even deterministic, past insensitive).
-Indeed, we could have the following function $f from the set $IS(A) of all non-empty initial sections of the set $A of 3 nested prefixes:
-($A is ordered by prefix order and an initial section of an order is the subset of all elements lower than a fixed element)
+Indeed, if $A is a set of 3 nested prefixes, we could have the following function $f
+from the set $IS(A) of all non-empty initial sections of $A to the set $A:
+($A is ordered by prefix order,
+and an initial section of an order is the subset of all elements lower than a fixed element)
 $A = {$t1, $t2, $t3}
 $IS(A) = {
   {$t1},
@@ -131,8 +137,10 @@ $f = {
   ({$t1, $t2}, $t1),//choose $t1
   ({$t1, $t2, $t3}, $t2)//choose $t2
 }
-As you see, the match with $t3 was just a trigger for choosing $t2 we can neither say that we prefer $t1 over $t2, nor $t2 over $t1 ; it's contextual.
+As you see, the match with $t3 was just a trigger for choosing $t2,
+we can neither say that we prefer $t1 over $t2, nor $t2 over $t1; it's contextual.
 That generalization is out of scope of this library for now.
-Hence we assume that we have an order of preference over the nested prefixes from the profile ;
-and thus the only choice that gives a reason for actually writing the tuples in the profile is to take the longest possible one.
+Hence we assume that we have an order of preference over the nested prefixes from the profile;
+and thus the only choice that gives a reason for actually writing the tuples in the profile
+is to take the longest possible one.
 

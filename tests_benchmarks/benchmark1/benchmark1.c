@@ -18,9 +18,11 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 */
 /*
 Explanations for this benchmark:
-tp_benchmark.txt is a transliteration profile file that reproduces the transliterations from https://sourceware.org/bugzilla/show_bug.cgi?id=23076.
+tp_benchmark.txt is a transliteration profile file that reproduces the transliterations from:
+https://sourceware.org/bugzilla/show_bug.cgi?id=23076.
 This transliteration profile is obtained from tp_UTF-8__ISO-8859-1IGNORE.txt with the additional transliterations.
-This benchmark compares glibc iconv() with a crafted locale, to tranliteration_profile_iconv() with a text profile or a binary profile.
+This benchmark compares glibc iconv(), with a crafted locale,
+to tranliteration_profile_iconv(), with a text profile or a binary profile.
 We prepare a binary profile from the text profile.
 Let n be the main number of iterations.
 There are 3 sub-benchmarks:
@@ -28,14 +30,17 @@ There are 3 sub-benchmarks:
    and we mesure the time to convert/transliterate n times the benchmark input string,
    then we free the profile/switch back the locale.
    These are the ideal conditions for performances when the cost of loading/freeing is unsignificant.
- - We mesure the time to load the profile/set the locale, convert/transliterate, and free the profile/switch back the locale n times.
+ - We mesure the time to load the profile/set the locale, convert/transliterate,
+   and free the profile/switch back the locale n times.
    These are the worst conditions when you have to set up everything for each conversion/transliteration.
- - We mesure the time of of n/30 iterations where in each iteration we load the profile/set the locale, convert/transliterate 30 times, and free the profile/switch back.
+ - We mesure the time of of n/30 iterations where in each iteration we load the profile/set the locale,
+   convert/transliterate 30 times, and free the profile/switch back the locale.
    These are average conditions to represent a small EDIFACT file with a low value of 30 fields to convert.
    EDIFACTs can be made of many thousands of fields.
 Each sub-benchmark is done 3 times: one time with text profile, one time with binary profile, one time with locale.
-Because of the tight coupling of locales, in real world examples we may have to compare worst conditions with iconv() and crafted locale,
-to average conditions with tranliteration_profile_iconv().
+Because of the tight coupling of locales, in real world examples we may have to compare:
+- worst conditions with iconv() and crafted locale,
+- to average conditions with tranliteration_profile_iconv().
 Because loading text profile is very slow, n is fixed to only 300 in this benchmark.
 You can add -O flag to CFLAGS in the makefile to improve the performances.
 */
@@ -44,13 +49,18 @@ You can add -O flag to CFLAGS in the makefile to improve the performances.
 but I did not succeed.
 As you can see in the code below, there is a b_activate_iconv = 0.
 And there is also commented out commands in the Makefile.
-What I tried was to customize glibc iconv() along the lines suggested in https://sourceware.org/bugzilla/show_bug.cgi?id=23076.
-I edited a locale definition file fr_FR@test in this directory (the Makefile puts it in the correct directory on Debian).
-I edited a charmap definition file ISO-8859-1-test in this directory (the Makefile puts it in the correct directory on Debian).
+What I tried was to customize glibc iconv() along the lines suggested in:
+https://sourceware.org/bugzilla/show_bug.cgi?id=23076.
+I edited a locale definition file fr_FR@test in this directory
+(the Makefile puts it in the correct directory on Debian).
+I edited a charmap definition file ISO-8859-1-test in this directory
+(the Makefile puts it in the correct directory on Debian).
 The makefile then edits the file /etc/locale.gen and executes locale-gen.
 Everything so far goes well.
 But iconv_open() below fails because there is no gconv module for ISO-8859-1-test.
-If I rename ISO-8859-1-test everywhere with ISO-8859-1 which I don't recommend (make copies of the correct files for ISO-8859-1) iconv_open() works but iconv() does not transliterate as specified by the fr_FR@test file.
+If I rename ISO-8859-1-test everywhere with ISO-8859-1 which I don't recommend
+(make copies of the correct files for ISO-8859-1),
+iconv_open() works but iconv() does not transliterate as specified by the fr_FR@test file.
 (You can check that the setlocale is correct since it returns "fr_FR@test".
 Euro symbol is transliterated to EUR instead of the currency symbol...
 What I could test with PHP is not working with C.)
@@ -111,7 +121,7 @@ int main(int argc, char *argv[]){
           i_current_column,
           i_result
       );
-      return i_result;
+      break;
     }
 
     i_result = transliteration_profile_dump_to_bin(
@@ -208,7 +218,7 @@ int main(int argc, char *argv[]){
           i_current_offset,
           i_result
       );
-      return i_result;
+      break;
     }
 
     i_result = transliteration_profile_iconv(
@@ -320,7 +330,8 @@ int main(int argc, char *argv[]){
           break;
 
           case EINVAL:
-            printf("The conversion stopped because of an incomplete byte sequence at the end of the input buffer.\n");
+            printf("The conversion stopped because of an incomplete byte sequence"
+                   " at the end of the input buffer.\n");
           break;
 
           case EBADF:
@@ -404,7 +415,7 @@ int main(int argc, char *argv[]){
           i_current_column,
           i_result
       );
-      return i_result;
+      break;
     }
 
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -429,6 +440,9 @@ int main(int argc, char *argv[]){
       free(s_output_string);
       s_output_string = NULL;
     }
+    if(i_result != 0){
+      break;
+    }
     clock_gettime(CLOCK_MONOTONIC, &finish);
     f_elapsed_time = finish.tv_sec - start.tv_sec;
     f_elapsed_time += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
@@ -451,7 +465,7 @@ int main(int argc, char *argv[]){
           i_current_offset,
           i_result
       );
-      return i_result;
+      break;
     }
 
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -476,6 +490,9 @@ int main(int argc, char *argv[]){
 
       free(s_output_string);
       s_output_string = NULL;
+    }
+    if(i_result != 0){
+      break;
     }
     clock_gettime(CLOCK_MONOTONIC, &finish);
     f_elapsed_time = finish.tv_sec - start.tv_sec;
@@ -507,7 +524,7 @@ int main(int argc, char *argv[]){
             i_current_column,
             i_result
         );
-        return i_result;
+        break;
       }
 
       i_result = transliteration_profile_iconv(
@@ -532,6 +549,9 @@ int main(int argc, char *argv[]){
       transliteration_profile_free(p_transliteration_profile);
       p_transliteration_profile = NULL;
     }
+    if(i_result != 0){
+      break;
+    }
     clock_gettime(CLOCK_MONOTONIC, &finish);
     f_elapsed_time = finish.tv_sec - start.tv_sec;
     f_elapsed_time += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
@@ -553,7 +573,7 @@ int main(int argc, char *argv[]){
             i_current_offset,
             i_result
         );
-        return i_result;
+        break;
       }
 
       i_result = transliteration_profile_iconv(
@@ -578,6 +598,9 @@ int main(int argc, char *argv[]){
       s_output_string = NULL;
       transliteration_profile_free(p_transliteration_profile);
       p_transliteration_profile = NULL;
+    }
+    if(i_result != 0){
+      break;
     }
     clock_gettime(CLOCK_MONOTONIC, &finish);
     f_elapsed_time = finish.tv_sec - start.tv_sec;
@@ -607,7 +630,7 @@ int main(int argc, char *argv[]){
             i_current_column,
             i_result
         );
-        return i_result;
+        break;
       }
 
       for(long int i = 0; i < i_number_of_sub_iterations; ++i){
@@ -633,6 +656,12 @@ int main(int argc, char *argv[]){
       }
       transliteration_profile_free(p_transliteration_profile);
       p_transliteration_profile = NULL;
+      if(i_result != 0){
+        break;
+      }
+    }
+    if(i_result != 0){
+      break;
     }
     clock_gettime(CLOCK_MONOTONIC, &finish);
     f_elapsed_time = finish.tv_sec - start.tv_sec;
@@ -655,7 +684,7 @@ int main(int argc, char *argv[]){
             i_current_offset,
             i_result
         );
-        return i_result;
+        break;
       }
 
       for(long int i = 0; i < i_number_of_sub_iterations; ++i){
@@ -682,6 +711,12 @@ int main(int argc, char *argv[]){
       }
       transliteration_profile_free(p_transliteration_profile);
       p_transliteration_profile = NULL;
+      if(i_result != 0){
+        break;
+      }
+    }
+    if(i_result != 0){
+      break;
     }
     clock_gettime(CLOCK_MONOTONIC, &finish);
     f_elapsed_time = finish.tv_sec - start.tv_sec;

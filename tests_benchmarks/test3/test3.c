@@ -102,7 +102,10 @@ int main(int argc, char *argv[]){
     }
 
     //test if both files are equal
-    i_result = mydiff("../../profiles/text_profiles/tp_ISO-8859-1__ISO-8859-15IGNORE.txt", "tp_ISO-8859-1__ISO-8859-15IGNORE.test_result");
+    i_result = mydiff(
+        "../../profiles/text_profiles/tp_ISO-8859-1__ISO-8859-15IGNORE.txt",
+        "tp_ISO-8859-1__ISO-8859-15IGNORE.test_result"
+    );
 
     if(i_result != 0){
       printf(

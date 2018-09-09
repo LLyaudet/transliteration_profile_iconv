@@ -69,13 +69,15 @@ try{
     }
   }
   else{
-    $sSigne = substr($sDefaultValue, 0, 1);
-    $sEntier = substr($sDefaultValue, 1);
-    if($sSigne !== '-' || !ctype_digit($sEntier)){
-      throw new Exception('The default value must be the constant string "i", an hexadecimal string or a negative integer.');
+    $sSign = substr($sDefaultValue, 0, 1);
+    $sInteger = substr($sDefaultValue, 1);
+    if($sSign !== '-' || !ctype_digit($sInteger)){
+      throw new Exception(
+          'The default value must be the constant string "i", an hexadecimal string or a negative integer.'
+      );
     }
-    if(strlen($sEntier) > strlen(I_MINIMUM_USER_DEFINED_ERROR_CODE * -1)
-      || ((int)$sEntier) > (I_MINIMUM_USER_DEFINED_ERROR_CODE * -1)
+    if(strlen($sInteger) > strlen(I_MINIMUM_USER_DEFINED_ERROR_CODE * -1)
+      || ((int)$sInteger) > (I_MINIMUM_USER_DEFINED_ERROR_CODE * -1)
     ){
       throw new Exception(sprintf(
           'The default value must be greater than %s.',
@@ -127,17 +129,23 @@ catch(Exception $oException){
   echo "------------------------------------------------------------\n",
        "----- Script 0fromUnicodeDataToDefaultProfile          -----\n",
        "------------------------------------------------------------\n",
-       "Usage : php 0fromUnicodeDataToDefaultProfile.php @InputFileName@ @OutputFileName@ @UnicodeEncoding@ @DefaultValue@\n",
-       "@InputFileName@ : name of the input file with unicode data, e.g. \"1UnicodeData_10.0.0.txt\"\n",
-       "@OutputFileName@ : name of the output file with default transliteration profile, e.g. \"tp_UTF8__IGNORE.txt\"\n",
-       "@UnicodeEncoding@ : name of the character encoding scheme of unicode characters, e.g. \"UTF-8\", \"UTF-16BE\", \"UTF-32BE\", \"UTF-16LE\", or \"UTF-32LE\"\n",
-       "@DefaultValue@ : the default value that will be the transliteration of all code points ;\n",
+       "Use: php 0fromUnicodeDataToDefaultProfile.php @InputFileName@ @OutputFileName@",
+           " @UnicodeEncoding@ @DefaultValue@\n",
+       "@InputFileName@: name of the input file with unicode data, e.g. \"1UnicodeData_10.0.0.txt\"\n",
+       "@OutputFileName@: name of the output file with default transliteration profile,\n",
+       "                  e.g. \"tp_UTF8__IGNORE.txt\"\n",
+       "@UnicodeEncoding@: name of the character encoding scheme of unicode characters,\n",
+       "                  e.g. \"UTF-8\", \"UTF-16BE\", \"UTF-32BE\", \"UTF-16LE\", or \"UTF-32LE\"\n",
+       "@DefaultValue@: the default value that will be the transliteration of all code points;\n",
        "                 it must be:\n",
        "                   the constant string \"i\" (ignore this character),\n",
        "                   an hexadecimal string of even length,\n",
-       "                   or a negative integer between -1 and ".I_MINIMUM_USER_DEFINED_ERROR_CODE." (user defined error code on reading this character),\n",
-       "                     this will be the error code returned so that you can freely dispatch characters into distinct error codes,\n",
-       "Example : php 0fromUnicodeDataToDefaultProfile.php 1UnicodeData_10.0.0.txt \"tp_UTF-8__ERROR.txt\" UTF-8 -2\n",
+       "                   or a negative integer between -1 and ", I_MINIMUM_USER_DEFINED_ERROR_CODE, "\n",
+       "                     (user defined error code on reading this character).\n",
+       "                     This will be the error code returned so that you can\n",
+       "                     freely dispatch characters into distinct error codes.\n",
+       "Example: php 0fromUnicodeDataToDefaultProfile.php 1UnicodeData_10.0.0.txt",
+               " \"tp_UTF-8__ERROR.txt\" UTF-8 -2\n",
        "------------------------------------------------------------\n"
   ;
 
@@ -228,6 +236,9 @@ function getSHexadecimalStringFrom($sLine, $sUnicodeEncoding){
               .'00';//getSHexFromTinyInt( intdiv($iCodePoint, 2**24) )
       }
     throw new Exception(sprintf('The code point "%s" could not be converted to UTF-32LE.', $sCodePoint));
+
+    default:
+    throw new Exception(sprintf('The encoding "%s" is unknown.', $sUnicodeEncoding));
   }
 }//end function getSHexadecimalStringFrom()
 

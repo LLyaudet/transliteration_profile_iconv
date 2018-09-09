@@ -66,10 +66,10 @@ catch(Exception $oException){
   echo "------------------------------------------------------------\n",
        "----- Script 0generateProfileFrom8BitEncodingToUnicode -----\n",
        "------------------------------------------------------------\n",
-       "Usage : php 0generateProfileFrom8BitEncodingToUnicode.php @8BitEncoding@ @UnicodeEncoding@\n",
-       "@8BitEncoding@ : name of the input encoding, e.g. \"ISO-8859-1\"\n",
-       "@UnicodeEncoding@ : name of the output unicode encoding, e.g. \"UTF-8\"\n",
-       "Example : php 0generateProfileFrom8BitEncodingToUnicode.php ISO-8859-1 UTF-8\n",
+       "Use: php 0generateProfileFrom8BitEncodingToUnicode.php @8BitEncoding@ @UnicodeEncoding@\n",
+       "@8BitEncoding@: name of the input encoding, e.g. \"ISO-8859-1\"\n",
+       "@UnicodeEncoding@: name of the output unicode encoding, e.g. \"UTF-8\"\n",
+       "Example: php 0generateProfileFrom8BitEncodingToUnicode.php ISO-8859-1 UTF-8\n",
        "------------------------------------------------------------\n"
   ;
 

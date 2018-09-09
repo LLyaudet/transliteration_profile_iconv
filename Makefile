@@ -17,7 +17,7 @@
 
 CC=gcc
 CFLAGS=-Wall
-VERSION=1_0_0
+VERSION=1_1_0
 
 .PHONY: run-tests run-tests-dynamic clean run-benchmarks run-benchmarks-dynamic
 

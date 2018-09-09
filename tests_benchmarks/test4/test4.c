@@ -19,8 +19,10 @@ along with transliteration_profile_iconv.  If not, see <http://www.gnu.org/licen
 /*
 Explanations for this test:
 tp_test_load.txt is a transliteration profile file that contains various cases of transliterations.
-This test loads this profile in a tree structure in memory and dumps a binary version of it from the tree structure.
-Then the binary version is loaded again into a tree structure and this structure is dumped to a text copy of the original profile.
+This test loads this profile in a tree structure in memory,
+and dumps a binary version of it from the tree structure.
+Then the binary version is loaded again into a tree structure,
+and this structure is dumped to a text copy of the original profile.
 It then checks that the copy is identical to the original.
 */
 
@@ -71,7 +73,8 @@ int main(int argc, char *argv[]){
 
     printf("Freeing first test profile\n");
     transliteration_profile_free(p_transliteration_profile);
-  
+    p_transliteration_profile = NULL;
+
     printf("Loading test profile from bin\n");
     i_result = transliteration_profile_load_from_bin(
         "tp_test_load_bin.test_result",
