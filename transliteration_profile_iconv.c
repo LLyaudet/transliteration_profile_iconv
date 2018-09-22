@@ -46,7 +46,7 @@ int transliteration_profile_load_from_text(
   unsigned char i_current_octet = 0;
   long i_status_for_node = 0;
   void* p_for_realloc = NULL;
-  size_t i_size_for_realloc = 0;
+  size_t i_number_of_elements_for_realloc = 0;
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
@@ -294,17 +294,26 @@ int transliteration_profile_load_from_text(
               break;
             }
             if(p_current_node->i_allocated_size > 1 << 30){
-              i_size_for_realloc = I_MAXIMUM_LENGTH_OF_TRANSLITERATION_PER_CHARACTER;
+              i_number_of_elements_for_realloc = I_MAXIMUM_LENGTH_OF_TRANSLITERATION_PER_CHARACTER;
             }
             else{
-              i_size_for_realloc = p_current_node->i_allocated_size * 2;
+              i_number_of_elements_for_realloc = p_current_node->i_allocated_size << 1;
             }
-            p_for_realloc = realloc(p_current_node->s_transliteration, i_size_for_realloc);
+            if(i_number_of_elements_for_realloc <= p_current_node->i_allocated_size
+              || i_number_of_elements_for_realloc * sizeof(unsigned char) < i_number_of_elements_for_realloc
+            ){
+              i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+              break;
+            }
+            p_for_realloc = realloc(
+                p_current_node->s_transliteration,
+                i_number_of_elements_for_realloc * sizeof(unsigned char)
+            );
             if(p_for_realloc == NULL){
               i_error_code = I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
               break;
             }
-            p_current_node->i_allocated_size = (unsigned long) i_size_for_realloc;
+            p_current_node->i_allocated_size = i_number_of_elements_for_realloc;
             p_current_node->s_transliteration = (unsigned char*) p_for_realloc;
           }
           p_current_node->s_transliteration[p_current_node->i_transliteration_size++] = i_current_octet;
@@ -1570,13 +1579,12 @@ int transliteration_profile_iconv__raw(
   size_t* p_i_current_read_offset
 ){
   size_t i_allocated_length_output_string = 0;
-  size_t i_new_allocated_length_output_string = 0;
   size_t i_offset_since_last_prefix_match = 0;
   t_transliteration_node* p_transliteration_node_root = NULL;
   t_transliteration_node* p_transliteration_node_last_match = NULL;
   t_transliteration_node* p_transliteration_node_current = NULL;
   void* p_for_realloc = NULL;
-  size_t i_size_for_realloc = 0;
+  size_t i_number_of_elements_for_realloc = 0;
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
@@ -1654,27 +1662,35 @@ int transliteration_profile_iconv__raw(
       }
       i_allocated_length_output_string = 8;
     }
-    i_new_allocated_length_output_string = i_allocated_length_output_string;
+    i_number_of_elements_for_realloc = i_allocated_length_output_string;
     *p_i_size_output_string += p_transliteration_node_last_match->i_transliteration_size;
-    while(*p_i_size_output_string > i_new_allocated_length_output_string){
-      i_new_allocated_length_output_string = i_new_allocated_length_output_string << 1;//multiply by two
-      if(i_new_allocated_length_output_string <= i_allocated_length_output_string){
+    while(*p_i_size_output_string > i_number_of_elements_for_realloc){
+      i_number_of_elements_for_realloc = i_number_of_elements_for_realloc << 1;//multiply by two
+      if(i_number_of_elements_for_realloc <= i_allocated_length_output_string){
         free(*p_s_output_string);
         *p_s_output_string = NULL;
         *p_i_size_output_string = 0;
         return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
       }
     }
-    if(i_allocated_length_output_string < i_new_allocated_length_output_string){
-      i_size_for_realloc = i_new_allocated_length_output_string * sizeof(unsigned char);
-      p_for_realloc = realloc(*p_s_output_string, i_size_for_realloc);
+    if(i_allocated_length_output_string < i_number_of_elements_for_realloc){
+      if(i_number_of_elements_for_realloc * sizeof(unsigned char) < i_number_of_elements_for_realloc){
+        free(*p_s_output_string);
+        *p_s_output_string = NULL;
+        *p_i_size_output_string = 0;
+        return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+      }
+      p_for_realloc = realloc(
+          *p_s_output_string,
+          i_number_of_elements_for_realloc * sizeof(unsigned char)
+      );
       if(p_for_realloc == NULL){
         free(*p_s_output_string);
         *p_s_output_string = NULL;
         *p_i_size_output_string = 0;
         return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
       }
-      i_allocated_length_output_string = i_new_allocated_length_output_string;
+      i_allocated_length_output_string = i_number_of_elements_for_realloc;
       *p_s_output_string = (unsigned char*) p_for_realloc;
     }
     memcpy(
@@ -1703,13 +1719,12 @@ int transliteration_profile_iconv__shrink1(
   size_t* p_i_current_read_offset
 ){
   size_t i_allocated_length_output_string = 0;
-  size_t i_new_allocated_length_output_string = 0;
   size_t i_offset_since_last_prefix_match = 0;
   t_transliteration_node* p_transliteration_node_root = NULL;
   t_transliteration_node* p_transliteration_node_last_match = NULL;
   t_transliteration_node* p_transliteration_node_current = NULL;
   void* p_for_realloc = NULL;
-  size_t i_size_for_realloc = 0;
+  size_t i_number_of_elements_for_realloc = 0;
 
   #ifdef DEBUG_TRANSLITERATION_PROFILE
   printf(
@@ -1793,27 +1808,35 @@ int transliteration_profile_iconv__shrink1(
       }
       i_allocated_length_output_string = 8;
     }
-    i_new_allocated_length_output_string = i_allocated_length_output_string;
+    i_number_of_elements_for_realloc = i_allocated_length_output_string;
     *p_i_size_output_string += p_transliteration_node_last_match->i_transliteration_size;
-    while(*p_i_size_output_string > i_new_allocated_length_output_string){
-      i_new_allocated_length_output_string = i_new_allocated_length_output_string << 1;//multiply by two
-      if(i_new_allocated_length_output_string <= i_allocated_length_output_string){
+    while(*p_i_size_output_string > i_number_of_elements_for_realloc){
+      i_number_of_elements_for_realloc = i_number_of_elements_for_realloc << 1;//multiply by two
+      if(i_number_of_elements_for_realloc <= i_allocated_length_output_string){
         free(*p_s_output_string);
         *p_s_output_string = NULL;
         *p_i_size_output_string = 0;
         return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
       }
     }
-    if(i_allocated_length_output_string < i_new_allocated_length_output_string){
-      i_size_for_realloc = i_new_allocated_length_output_string * sizeof(unsigned char);
-      p_for_realloc = realloc(*p_s_output_string, i_size_for_realloc);
+    if(i_allocated_length_output_string < i_number_of_elements_for_realloc){
+      if(i_number_of_elements_for_realloc * sizeof(unsigned char) < i_number_of_elements_for_realloc){
+        free(*p_s_output_string);
+        *p_s_output_string = NULL;
+        *p_i_size_output_string = 0;
+        return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
+      }
+      p_for_realloc = realloc(
+          *p_s_output_string,
+          i_number_of_elements_for_realloc * sizeof(unsigned char)
+      );
       if(p_for_realloc == NULL){
         free(*p_s_output_string);
         *p_s_output_string = NULL;
         *p_i_size_output_string = 0;
         return I_ERROR__COULD_NOT_ALLOCATE_MEMORY;
       }
-      i_allocated_length_output_string = i_new_allocated_length_output_string;
+      i_allocated_length_output_string = i_number_of_elements_for_realloc;
       *p_s_output_string = (unsigned char*) p_for_realloc;
     }
     memcpy(
